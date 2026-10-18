@@ -1,0 +1,28 @@
+\section{Introducción}
+\label{sec:introduccion}
+
+\subsection{Definición del Problema}
+\label{sec:problema}
+
+En la ciudad de Arequipa, la información sobre las rutas del transporte público es dispersa, está desactualizada y no se encuentra disponible de forma clara para el ciudadano. Ante la necesidad de desplazarse entre dos puntos, el usuario desconoce qué línea de bus tomar, cuáles son sus paraderos y si es necesario realizar un transbordo. Esta falta de información confiable produce pérdida de tiempo, desplazamientos innecesarios y decisiones de movilidad incorrectas.
+
+La planificación de viajes en transporte público constituye una tarea computacionalmente \emph{crítica}: un resultado erróneo (una ruta que no pasa cerca del origen, un transbordo inviable o una dirección de recorrido incorrecta) induce al usuario a tomar una decisión equivocada, con el consiguiente costo en tiempo y seguridad. Por este motivo, la correctitud del algoritmo de búsqueda de rutas no puede garantizarse únicamente mediante pruebas de ejecución; se requiere una especificación formal que demuestre propiedades sobre el resultado producido, tal como se argumenta para los sistemas de implementación crítica~\cite{verhoef2005}.
+
+El presente trabajo propone una plataforma web para la búsqueda de rutas de transporte en Arequipa. Su componente crítica, el algoritmo de búsqueda de rutas directas y combinadas, es especificada y validada formalmente mediante el lenguaje VDM++~\cite{fitzgerald2008}, utilizando invariantes, precondiciones y postcondiciones. La validación del modelo se realiza con la herramienta VDMTools~\cite{fitzgerald2008}.
+
+\subsection{Objetivos}
+\label{sec:objetivos}
+
+\subsubsection{Objetivo general}
+
+Desarrollar una propuesta de solución para la planificación de viajes en transporte público, cuya componente crítica, el algoritmo de búsqueda de rutas, sea especificada y validada formalmente con VDM++, garantizando su correctitud y escalabilidad.
+
+\subsubsection{Objetivos específicos}
+
+\begin{enumerate}
+    \item Definir los tipos de datos e invariantes del dominio de rutas (recorridos, paraderos y radios de búsqueda).
+    \item Especificar en VDM++ las operaciones de búsqueda de rutas directas y de rutas combinadas mediante pre y postcondiciones.
+    \item Establecer las propiedades que el algoritmo debe garantizar, tales como la distancia máxima de acceso a una ruta, la viabilidad de los transbordos y la longitud mínima de los segmentos.
+    \item Validar el modelo formal con la herramienta VDM++ Toolbox mediante obligaciones de prueba y casos de prueba.
+    \item Documentar los requerimientos funcionales y los trabajos relacionados que sustentan la propuesta.
+\end{enumerate}

@@ -1,0 +1,28 @@
+\section{Requerimientos Funcionales}
+\label{sec:requerimientos}
+
+La propuesta plantea una plataforma web con dos funcionalidades principales: la búsqueda de rutas de transporte y el reporte colaborativo de incidencias urbanas. Los requerimientos funcionales que se describen a continuación constituyen la base de la especificación formal; los requerimientos RF1 y RF2 son los que serán especificados y verificados con VDM++ en el siguiente entregable.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Requerimientos funcionales del sistema.}
+\label{tab:rf}
+\begin{tabular}{|c|p{6.6cm}|}
+\hline
+ID & Requerimiento funcional \\
+\hline
+RF1 & Búsqueda de rutas directas: para un origen y un destino dados, el sistema debe devolver las rutas cuyo recorrido pase a una distancia menor o igual a un radio definido (1000 m) de ambos puntos. \\
+\hline
+RF2 & Búsqueda de rutas combinadas: el sistema debe devolver combinaciones de dos rutas con un punto de transbordo viable, respetando una distancia máxima de transbordo (100 m) y una longitud mínima de segmento (500 m). \\
+\hline
+RF3 & Visualización en mapa: el sistema debe mostrar en un mapa interactivo el recorrido de las rutas y sus paraderos. \\
+\hline
+RF4 & Estimación de distancia y tiempo: el sistema debe calcular la distancia total del viaje y un tiempo estimado, incluyendo el tiempo de transbordo. \\
+\hline
+RF5 & Gestión de datos de rutas: el sistema debe permitir cargar rutas desde archivos KML y asociar los paraderos cercanos a cada recorrido. \\
+\hline
+\end{tabular}
+\end{table}
+
+Los requerimientos RF1 y RF2 se formalizarán en VDM++ definiendo los tipos de datos (puntos, recorridos), las invariantes del dominio (longitud mínima del recorrido, validez de coordenadas) y las operaciones de búsqueda con sus correspondientes pre y postcondiciones. Por ejemplo, la postcondición asociada a RF1 establece que toda ruta directa devuelta debe encontrarse a una distancia menor o igual al radio definido tanto del origen como del destino.
