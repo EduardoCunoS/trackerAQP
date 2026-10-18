@@ -1,0 +1,132 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{Ejercicio Práctico 3}\\[2mm]
+\large Secuencias, Conjuntos, Diagrama de Clases y Tipo \texttt{map}}
+\author{Proyecto: Sistema de Planificación de Viajes en Transporte Público}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Uso de secuencia (Seq) y conjunto (Set)}
+
+El proyecto hace uso de \textbf{ambos} tipos: secuencia y conjunto.
+
+\begin{itemize}
+  \item \textbf{Secuencia (\texttt{seq})}: el campo \texttt{coordenadas : seq of Punto}. Modela la propiedad de \emph{orden} del trayecto: el orden de los puntos define el recorrido y es posible que un punto se repita (por ejemplo, en una parada). Por ello se elige secuencia y no conjunto.
+  \item \textbf{Conjunto (\texttt{set})}: colecciones como \texttt{paraderos : set of ParaderoId} o \texttt{empresas : set of Empresa}. Modelan catálogos en los que el \emph{orden no importa} y \emph{no debe haber duplicados}, por lo que el conjunto es la representación natural.
+\end{itemize}
+
+\section{Diagrama de clases inicial}
+
+El diagrama incluye las clases \texttt{Empresa}, \texttt{Ruta}, \texttt{Recorrido}, \texttt{Paradero} y \texttt{RecorridoParadero}, junto con sus asociaciones y cardinalidades.
+
+\begin{center}
+\begin{tikzpicture}[
+  class/.style={draw, rectangle, rounded corners=2pt, align=left, inner sep=5pt, font=\small},
+  assoc/.style={-{Stealth[length=2mm]}, thick}
+]
+
+\node[class] (empresa) at (0,10.5) {
+  \begin{tabular}{l}
+    \textbf{Empresa}\\
+    \hline
+    nombre : seq of char\\
+    descripcion : seq of char
+  \end{tabular}
+};
+
+\node[class] (ruta) at (0,7.5) {
+  \begin{tabular}{l}
+    \textbf{Ruta}\\
+    \hline
+    nombre : seq of char\\
+    codigo : seq of char
+  \end{tabular}
+};
+
+\node[class] (recorrido) at (-2.5,4) {
+  \begin{tabular}{l}
+    \textbf{Recorrido}\\
+    \hline
+    sentido : Sentido\\
+    coordenadas : seq of Punto
+  \end{tabular}
+};
+
+\node[class] (paradero) at (4.5,4) {
+  \begin{tabular}{l}
+    \textbf{Paradero}\\
+    \hline
+    nombre : seq of char\\
+    latitud : real\\
+    longitud : real
+  \end{tabular}
+};
+
+\node[class] (rpar) at (1,1) {
+  \begin{tabular}{l}
+    \textbf{RecorridoParadero}\\
+    \hline
+    orden : nat\\
+    distancia : real
+  \end{tabular}
+};
+
+\draw[assoc] (empresa.south) -- (ruta.north)
+  node[pos=0.5,left] {1} node[pos=0.5,right] {$*$};
+
+\draw[assoc] (ruta.south) -- (recorrido.north)
+  node[pos=0.5,left] {1} node[pos=0.5,right] {1..2};
+
+\draw[assoc] (recorrido.south) -- (rpar.north west)
+  node[pos=0.5,left] {1} node[pos=0.5,right] {$*$};
+
+\draw[assoc] (paradero.south) -- (rpar.north east)
+  node[pos=0.5,left] {$*$} node[pos=0.5,right] {1};
+
+\end{tikzpicture}
+\end{center}
+
+\section{Tipo map para relacionar las clases}
+
+El tipo \texttt{map} relaciona un dominio con un rango. Para vincular cada ruta con sus recorridos se define:
+
+\begin{lstlisting}
+recorridosPorRuta : map Ruta to set of Recorrido
+\end{lstlisting}
+
+\section{Invariante asociada}
+
+La invariante asociada al mapa establece dos propiedades: (1) cada ruta tiene a lo sumo dos recorridos (IDA y VUELTA), y (2) cada recorrido almacenado en el mapa hace referencia a la ruta que lo contiene.
+
+\begin{lstlisting}
+inv recorridosPorRuta ==
+  (forall r in set dom recorridosPorRuta &
+     card recorridosPorRuta(r) <= 2)
+  and
+  (forall r in set dom recorridosPorRuta &
+     forall rec in set recorridosPorRuta(r) &
+       rec.ruta = r);
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,66 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{Ejercicio Práctico 2}\\[2mm]
+\large Modelado de un Registro con Invariante}
+\author{Proyecto: Sistema de Planificación de Viajes en Transporte Público}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Objetivo}
+
+Modelar un \textbf{registro} (\emph{record}) para un componente del proyecto e indicar al menos una \textbf{invariante}.
+
+\section{Definición del registro}
+
+Un registro es un tipo compuesto por campos con nombre. Se modelan dos registros del subsistema de rutas: \texttt{Punto}, que representa una coordenada geográfica, y \texttt{Recorrido}, que agrupa los datos de un trayecto.
+
+\begin{lstlisting}
+Punto :: lat : real
+         lng : real;
+
+Recorrido :: ruta         : RutaId
+             sentido      : Sentido
+             coordenadas  : seq of Punto
+             color        : seq of char;
+\end{lstlisting}
+
+\section{Invariante}
+
+Se definen dos invariantes. La primera garantiza que las coordenadas estén dentro de un rango geográfico válido; la segunda, que todo recorrido tenga al menos dos puntos, coincidiendo con la regla de negocio del sistema (un trayecto requiere un punto de origen y uno de destino).
+
+\begin{lstlisting}
+inv punto ==
+  lat >= -90  and lat <= 90  and
+  lng >= -180 and lng <= 180;
+
+inv recorrido ==
+  len coordenadas >= 2;
+\end{lstlisting}
+
+\section{Justificación}
+
+\begin{itemize}
+  \item La invariante de \texttt{Punto} impide que el sistema almacene coordenadas geográficamente inválidas.
+  \item La invariante de \texttt{Recorrido} garantiza que no existan recorridos vacíos o de un solo punto, una propiedad necesaria para que el algoritmo de búsqueda de rutas produzca resultados con sentido.
+\end{itemize}
+
+\end{document}

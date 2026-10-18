@@ -1,0 +1,77 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{array}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{Ejercicio Práctico 1}\\[2mm]
+\large Tipos \texttt{quote} y \texttt{token} en el Proyecto}
+\author{Proyecto: Sistema de Planificación de Viajes en Transporte Público}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Objetivo}
+
+Determinar qué elementos del proyecto pueden modelarse como tipos \textbf{quote} y como tipos \textbf{token} en VDM++.
+
+\section{Tipo quote}
+
+Un tipo \textbf{quote} representa un conjunto finito de valores simbólicos (una enumeración). Se utiliza cuando un atributo solo puede tomar un número limitado de valores con nombre.
+
+En el subsistema de rutas, el campo \texttt{sentido} de un recorrido solo admite dos valores (\texttt{IDA} y \texttt{VUELTA}), por lo que se modela como tipo quote:
+
+\begin{lstlisting}
+Sentido = <IDA> | <VUELTA>
+\end{lstlisting}
+
+\section{Tipo token}
+
+Un tipo \textbf{token} representa valores opacos que no admiten ninguna operación, salvo la comparación por igualdad. Se utiliza para identificadores únicos cuyo contenido interno no es relevante para la especificación.
+
+\begin{lstlisting}
+RutaId     = token
+ParaderoId = token
+\end{lstlisting}
+
+\section{Resumen}
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Elemento del proyecto} & \textbf{Tipo} & \textbf{Declaración} \\
+\hline
+\texttt{Recorrido.sentido} (IDA / VUELTA) & quote & \texttt{Sentido = <IDA> | <VUELTA>} \\
+\hline
+\texttt{Ruta} (identificador) & token & \texttt{RutaId = token} \\
+\hline
+\texttt{Paradero} (identificador) & token & \texttt{ParaderoId = token} \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Justificación}
+
+\begin{itemize}
+  \item Se usa \textbf{quote} para \texttt{Sentido} porque el dominio es un conjunto cerrado y finito de valores simbólicos, y el tipo quote permite restringir la especificación a esos valores exactos.
+  \item Se usa \textbf{token} para los identificadores porque, para la especificación, solo interesa distinguir una ruta o un paradero de otro (igualdad), sin necesidad de inspeccionar su contenido.
+\end{itemize}
+
+Nota: este mismo criterio se aplica a otros componentes del proyecto; por ejemplo, el estado de una incidencia del foro también admite un tipo quote (\texttt{EstadoIncidencia = <Activo> | <EnProceso> | <Resuelto> | <Falso>}).
+
+\end{document}
