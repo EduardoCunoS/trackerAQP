@@ -13,15 +13,20 @@ public Sentido = <IDA> | <VUELTA>;
 -- Identificador de ruta
 public RutaId = nat;
 
--- Punto: par (latitud, longitud)
-public Punto = real * real;
+-- Punto: par (latitud, longitud), con coordenadas en rango valido
+public Punto = real * real
+inv p == p.#1 >= -90 and p.#1 <= 90 and p.#2 >= -180 and p.#2 <= 180;
 
--- Recorrido: (ruta, sentido, coordenadas)
-public Recorrido = RutaId * Sentido * seq of Punto;
+-- Recorrido: (ruta, sentido, coordenadas), con al menos 2 puntos
+public Recorrido = RutaId * Sentido * seq of Punto
+inv r == len r.#3 >= 2;
 
 instance variables
 
 recorridos : set of Recorrido := {};
+
+-- Mapa: ruta -> conjunto de sus recorridos (maximo 2: IDA y VUELTA)
+recorridosPorRuta : map RutaId to set of Recorrido := { |-> };
 
 functions
 

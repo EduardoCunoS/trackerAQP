@@ -60,31 +60,72 @@ La propuesta plantea una plataforma web con dos funcionalidades principales: la 
 
 ## 4. Modelo en VDM++
 
-El componente crítico del sistema, el algoritmo de búsqueda de rutas, se especificó como una clase VDM++ denominada `Sistema`. El modelo se organiza en tipos, una variable de instancia, funciones auxiliares y operaciones con pre y postcondiciones.
+El componente crítico del sistema, el algoritmo de búsqueda de rutas, se especificó como una clase VDM++ denominada `Sistema`. El modelo cubre los elementos del lenguaje requeridos: tipos *quote*, *token*, registros con invariantes, secuencias, conjuntos y mapas.
 
 ![Modelo VDM++ cargado en la VDM++ Toolbox](images/Modelo_abierto_en_la_Toolbox.png)
 
 ### 4.1 Tipos e invariantes
 
-El modelo define el tipo *quote* `Sentido` (ida o vuelta), el identificador de ruta `RutaId`, y los tipos compuestos `Punto` (coordenada geográfica) y `Recorrido` (ruta, sentido y secuencia de puntos):
+La especificación define un tipo *quote* para el sentido, dos tipos *token* para los identificadores opacos, y dos registros con sus invariantes:
 
 ```
 class Sistema
 types
-  public Sentido   = <IDA> | <VUELTA>;
-  public RutaId    = nat;
-  public Punto     = real * real;
-  public Recorrido = RutaId * Sentido * seq of Punto;
+  public Sentido    = <IDA> | <VUELTA>;      -- quote
+  public RutaId     = token;                 -- token
+  public ParaderoId = token;                 -- token
+
+  public Punto :: lat : real                 -- record
+                  lng : real
+  inv p == p.lat >= -90 and p.lat <= 90 and
+           p.lng >= -180 and p.lng <= 180;
+
+  public Recorrido :: ruta : RutaId          -- record
+             sentido : Sentido
+             coordenadas : seq of Punto
+  inv r == len r.coordenadas >= 2;
 
 instance variables
   recorridos : set of Recorrido := {};
+  paraderos  : set of ParaderoId := {};
 ```
 
-El dominio impone dos invariantes: (i) todo punto debe tener coordenadas dentro del rango geográfico válido (−90° ≤ lat ≤ 90° y −180° ≤ lng ≤ 180°); y (ii) todo recorrido debe tener al menos dos puntos, pues un trayecto requiere origen y destino.
+Los *quote* representan valores simbólicos de un dominio cerrado (ida o vuelta); los *token* representan identificadores opacos que solo admiten igualdad; y los registros agrupan campos con nombre. Las invariantes restringen los valores: las coordenadas deben estar en el rango geográfico (−90° ≤ lat ≤ 90° y −180° ≤ lng ≤ 180°) y todo recorrido debe tener al menos dos puntos.
 
-### 4.2 Operaciones y postcondiciones
+### 4.2 Colecciones: secuencia, conjunto y mapa
 
-`buscarRutasDirectas` (RF1) devuelve los recorridos que pasan a una distancia menor o igual a `radio` del origen `A` y del destino `B`:
+Se usan **secuencias** (`seq of Punto`) para las coordenadas, porque el orden define el trayecto y un punto puede repetirse; y **conjuntos** (`set of Recorrido`, `set of ParaderoId`) para los catálogos, donde el orden no importa y no debe haber duplicados. Además, se propone un **mapa** que relaciona cada ruta con sus recorridos:
+
+```
+recorridosPorRuta : map RutaId to set of Recorrido
+inv recorridosPorRuta ==
+  (forall r in set dom recorridosPorRuta &
+     card recorridosPorRuta(r) <= 2)
+  and
+  (forall r in set dom recorridosPorRuta &
+     forall rec in set recorridosPorRuta(r) & rec.ruta = r);
+```
+
+La invariante del mapa expresa que cada ruta tiene a lo sumo dos recorridos (ida y vuelta) y que cada recorrido referencia a su ruta.
+
+### 4.3 Implementación validada
+
+Por limitaciones de la versión de la Toolbox (VDMTools 9.0.7), la implementación ejecutable representa los registros como tipos producto y los *token* como naturales, preservando la semántica y las invariantes:
+
+```
+types
+  public Sentido   = <IDA> | <VUELTA>;
+  public RutaId    = nat;
+  public Punto     = real * real
+    inv p == p.#1 >= -90 and p.#1 <= 90 and
+             p.#2 >= -180 and p.#2 <= 180;
+  public Recorrido = RutaId * Sentido * seq of Punto
+    inv r == len r.#3 >= 2;
+```
+
+### 4.4 Operaciones y postcondiciones
+
+`buscarRutasDirectas` (RF1) devuelve los recorridos que pasan a una distancia menor o igual a `radio` del origen `A` y del destino `B` (en la implementación, `coordenadas` se accede como `rec.#3`):
 
 ```
 public buscarRutasDirectas : Punto * Punto * real ==> set of Recorrido
@@ -98,11 +139,11 @@ post forall rec in set RESULT &
        cercaniaPunto(B, rec.#3) <= radio;
 ```
 
-La postcondición formaliza la propiedad central: toda ruta devuelta se encuentra a una distancia menor o igual al radio respecto del origen y del destino. `buscarRutasCombinadas` (RF2) extiende la búsqueda a pares de recorridos conectados por un transbordo, exigiendo además que las rutas sean distintas y que exista un punto de transbordo dentro de `radioTransbordo`.
+La postcondición formaliza la propiedad central: toda ruta devuelta está a una distancia menor o igual al radio respecto del origen y del destino. `buscarRutasCombinadas` (RF2) extiende la búsqueda a pares de recorridos con transbordo, exigiendo además que las rutas sean distintas y que exista un transbordo dentro de `radioTransbordo`.
 
-### 4.3 Diagrama de clases
+### 4.5 Diagrama de clases
 
-El diagrama de clases del dominio de rutas se documenta en formato PlantUML (una empresa tiene varias rutas; cada ruta tiene uno o dos recorridos; y cada recorrido se asocia con paraderos mediante `RecorridoParadero`):
+El diagrama de clases del dominio se documenta en PlantUML (una empresa tiene varias rutas; cada ruta tiene uno o dos recorridos; y cada recorrido se asocia con paraderos mediante `RecorridoParadero`):
 
 ```plantuml
 @startuml

@@ -30,7 +30,7 @@ print c.buscarRutasCombinadas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 
 
 -- ============================================================
 -- CAPTURA 5: validacion de la postcondicion (debe dar true)
--- Nota: cercaniaPunto es funcion, se califica con el nombre de clase
+-- Nota: cercaniaPunto se llama por el objeto (s.cercaniaPunto)
 -- ============================================================
 
-print forall rec in set s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05) & Sistema`cercaniaPunto(mk_(-16.3989, -71.5370), rec.#3) <= 0.05 and Sistema`cercaniaPunto(mk_(-16.4298, -71.5192), rec.#3) <= 0.05
+print forall rec in set s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05) & s.cercaniaPunto(mk_(-16.3989, -71.5370), rec.#3) <= 0.05 and s.cercaniaPunto(mk_(-16.4298, -71.5192), rec.#3) <= 0.05

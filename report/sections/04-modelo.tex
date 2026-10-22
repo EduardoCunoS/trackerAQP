@@ -3,43 +3,100 @@
 
 El componente crítico del sistema, el algoritmo de búsqueda de rutas, se
 especificó como una clase VDM++ denominada \texttt{Sistema}. El modelo se
-organiza en tipos, una variable de instancia, funciones auxiliares y
-operaciones con pre y postcondiciones. La Figura~\ref{fig:modelo} muestra
-el modelo completo cargado en la VDM++ Toolbox.
+organiza en tipos, variables de instancia, funciones auxiliares y
+operaciones con pre y postcondiciones, y cubre los elementos del lenguaje
+requeridos: tipos \emph{quote}, \emph{token}, registros con invariantes,
+secuencias, conjuntos y mapas. La Figura~\ref{fig:modelo} muestra el
+modelo cargado en la VDM++ Toolbox.
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=0.82\textwidth]{images/Modelo_abierto_en_la_Toolbox.png}
+\includegraphics[width=\columnwidth]{images/Modelo_abierto_en_la_Toolbox.png}
 \caption{Modelo VDM++ del subsistema de rutas cargado en la VDM++ Toolbox.}
 \label{fig:modelo}
-\end{figure*}
+\end{figure}
 
 \subsection{Tipos e invariantes}
 \label{sec:tipos}
 
-El modelo define el tipo \emph{quote} \texttt{Sentido} (ida o vuelta), el
-identificador de ruta \texttt{RutaId}, y los tipos compuestos
-\texttt{Punto} (coordenada geográfica) y \texttt{Recorrido} (ruta, sentido
-y secuencia de puntos):
+La especificación define un tipo \emph{quote} para el sentido del
+recorrido, dos tipos \emph{token} para los identificadores opacos, y dos
+tipos registro con sus invariantes:
 
 \begin{lstlisting}
 class Sistema
 types
-  public Sentido   = <IDA> | <VUELTA>;
-  public RutaId    = nat;
-  public Punto     = real * real;
-  public Recorrido = RutaId * Sentido * seq of Punto;
+  public Sentido    = <IDA> | <VUELTA>;      -- quote
+  public RutaId     = token;                 -- token
+  public ParaderoId = token;                 -- token
+
+  public Punto :: lat : real                 -- record
+                  lng : real
+  inv p == p.lat >= -90 and p.lat <= 90 and
+           p.lng >= -180 and p.lng <= 180;
+
+  public Recorrido :: ruta : RutaId          -- record
+             sentido : Sentido
+             coordenadas : seq of Punto
+  inv r == len r.coordenadas >= 2;
 
 instance variables
   recorridos : set of Recorrido := {};
+  paraderos  : set of ParaderoId := {};
 \end{lstlisting}
 
-El dominio impone dos invariantes: (i) todo punto debe tener coordenadas
-dentro del rango geográfico válido ($-90^{\circ} \le lat \le 90^{\circ}$ y
-$-180^{\circ} \le lng \le 180^{\circ}$); y (ii) todo recorrido debe tener
-al menos dos puntos, pues un trayecto requiere origen y destino. Estas
-propiedades se documentan en el modelo y se reflejan en las precondiciones
-de las funciones auxiliares y en los datos de prueba.
+Los tipos \emph{quote} representan valores simbólicos de un dominio
+cerrado (ida o vuelta). Los tipos \emph{token} representan identificadores
+opacos que solo admiten igualdad, por lo que no es necesario conocer su
+estructura interna. Los registros agrupan campos con nombre y sus
+invariantes restringen los valores válidos: las coordenadas deben estar en
+el rango geográfico ($-90^{\circ} \le lat \le 90^{\circ}$ y
+$-180^{\circ} \le lng \le 180^{\circ}$) y todo recorrido debe tener al
+menos dos puntos, pues un trayecto requiere origen y destino.
+
+\subsection{Colecciones: secuencia, conjunto y mapa}
+\label{sec:colecciones}
+
+El modelo usa tanto secuencias como conjuntos. Las \textbf{secuencias}
+(\texttt{seq of Punto}) se emplean para las coordenadas, porque el orden
+de los puntos define el trayecto y un punto puede repetirse en una parada.
+Los \textbf{conjuntos} (\texttt{set of Recorrido}, \texttt{set of
+ParaderoId}) se emplean para los catálogos, donde el orden no importa y no
+debe haber duplicados. Adicionalmente, se propone un \textbf{mapa} para
+relacionar cada ruta con sus recorridos:
+
+\begin{lstlisting}
+recorridosPorRuta : map RutaId to set of Recorrido
+inv recorridosPorRuta ==
+  (forall r in set dom recorridosPorRuta &
+     card recorridosPorRuta(r) <= 2)
+  and
+  (forall r in set dom recorridosPorRuta &
+     forall rec in set recorridosPorRuta(r) & rec.ruta = r);
+\end{lstlisting}
+
+La invariante del mapa expresa que cada ruta tiene a lo sumo dos
+recorridos (ida y vuelta) y que cada recorrido del mapa referencia a la
+ruta que lo contiene.
+
+\subsection{Implementación validada}
+\label{sec:implementacion}
+
+Por limitaciones de la versión de la Toolbox empleada (VDMTools 9.0.7),
+la implementación ejecutable representa los tipos registro como tipos
+producto y los identificadores \emph{token} como naturales, preservando la
+semántica y las invariantes del modelo:
+
+\begin{lstlisting}
+types
+  public Sentido   = <IDA> | <VUELTA>;
+  public RutaId    = nat;
+  public Punto     = real * real
+    inv p == p.#1 >= -90 and p.#1 <= 90 and
+             p.#2 >= -180 and p.#2 <= 180;
+  public Recorrido = RutaId * Sentido * seq of Punto
+    inv r == len r.#3 >= 2;
+\end{lstlisting}
 
 \subsection{Operaciones y postcondiciones}
 \label{sec:operaciones}
@@ -47,7 +104,9 @@ de las funciones auxiliares y en los datos de prueba.
 Sobre la variable de instancia \texttt{recorridos : set of Recorrido} se
 definen las operaciones de búsqueda. \texttt{buscarRutasDirectas} (RF1)
 devuelve los recorridos que pasan a una distancia menor o igual a
-\texttt{radio} del origen \texttt{A} y del destino \texttt{B}:
+\texttt{radio} del origen \texttt{A} y del destino \texttt{B} (en la
+implementación con tuplas, el campo \texttt{coordenadas} se accede como
+\texttt{rec.\#3}):
 
 \begin{lstlisting}
 public buscarRutasDirectas : Punto * Punto * real ==> set of Recorrido
@@ -77,9 +136,9 @@ recorridos (ida y vuelta); y cada recorrido se asocia con paraderos a
 través de la clase \texttt{RecorridoParadero}, que registra el orden y la
 distancia.
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\resizebox{0.95\textwidth}{!}{%
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
   class/.style={draw, rectangle, rounded corners=2pt, align=left, inner sep=5pt, font=\small},
   assoc/.style={-{Stealth[length=2mm]}, thick}
@@ -96,7 +155,7 @@ distancia.
 \end{tikzpicture}}
 \caption{Diagrama de clases del dominio de rutas.}
 \label{fig:clases}
-\end{figure*}
+\end{figure}
 
 El diagrama también se documenta en formato PlantUML, lo que permite
 regenerarlo o exportarlo a otros formatos:
@@ -118,9 +177,9 @@ Paradero "1" --> "*" RecorridoParadero
 La Figura~\ref{fig:typecheck} muestra que el análisis de tipos del modelo
 finaliza sin errores.
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=0.82\textwidth]{images/Type_Check_sin_errores.png}
+\includegraphics[width=\columnwidth]{images/Type_Check_sin_errores.png}
 \caption{Análisis de tipos (\emph{type check}) del modelo sin errores.}
 \label{fig:typecheck}
-\end{figure*}
+\end{figure}
