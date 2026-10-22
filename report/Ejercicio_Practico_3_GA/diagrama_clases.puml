@@ -1,0 +1,34 @@
+@startuml
+
+class Empresa {
+  nombre : seq of char
+  descripcion : seq of char
+}
+
+class Ruta {
+  nombre : seq of char
+  codigo : seq of char
+}
+
+class Recorrido {
+  sentido : Sentido
+  coordenadas : seq of Punto
+}
+
+class Paradero {
+  nombre : seq of char
+  latitud : real
+  longitud : real
+}
+
+class RecorridoParadero {
+  orden : nat
+  distancia : real
+}
+
+Empresa "1" --> "*" Ruta
+Ruta "1" --> "1..2" Recorrido
+Recorrido "1" --> "*" RecorridoParadero
+Paradero "1" --> "*" RecorridoParadero
+
+@enduml
