@@ -1,0 +1,23 @@
+\section{Discusión}
+\label{sec:discusion}
+
+Los resultados muestran que la especificación formal captura
+correctamente las propiedades centrales del algoritmo de búsqueda. Las
+postcondiciones de \texttt{buscarRutasDirectas} y
+\texttt{buscarRutasCombinadas} expresan con precisión las garantías del
+sistema: proximidad de las rutas al origen y al destino, y viabilidad de
+los transbordos. La ejecución de los casos de prueba y la evaluación
+directa de la postcondición confirman que el modelo satisface dichas
+propiedades para los datos considerados.
+
+Sin embargo, la validación por interpretación no equivale a una
+demostración deductiva completa: los casos de prueba cubren escenarios
+representativos, pero no prueban la postcondición para todas las
+entradas posibles. Las obligaciones de prueba generadas por la Toolbox
+constituyen el punto de partida para una verificación más rigurosa.
+
+Desde el punto de vista del modelado, la herramienta impuso algunas
+restricciones prácticas. En particular, los tipos registro se
+representaron como tipos producto (tuplas) y la distancia se modeló de
+forma simplificada; ambos aspectos se detallan en la
+Sección~\ref{sec:limitaciones}.

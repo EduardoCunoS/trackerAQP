@@ -1,0 +1,15 @@
+\section{Limitaciones}
+\label{sec:limitaciones}
+
+El trabajo presenta las siguientes limitaciones. Primero, la función de
+distancia se modeló de forma simplificada (distancia Manhattan sobre
+coordenadas), mientras que la implementación real utiliza la fórmula de
+Haversine; esto no altera la estructura de las propiedades verificadas,
+pero sí la exactitud numérica. Segundo, por compatibilidad con la versión
+de la herramienta, los tipos registro se representaron como tipos
+producto (tuplas), lo que reduce la legibilidad del modelo frente a una
+definición con campos con nombre. Tercero, la validación se basó en
+interpretación y casos de prueba, no en una demostración deductiva
+completa de las obligaciones de prueba. Finalmente, el conjunto de datos
+de prueba es reducido y no cubre toda la variabilidad de las rutas
+reales.

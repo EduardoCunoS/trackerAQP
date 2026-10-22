@@ -4,15 +4,27 @@
 \usepackage[spanish,es-noshorthands]{babel}
 \usepackage{amsmath,amssymb}
 \usepackage{array}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
 
 \begin{document}
 
 \title{Sistema de Planificación de Viajes en Transporte Público con Validación Formal en VDM++ para la Ciudad de Arequipa}
 
 \author{
-\IEEEauthorblockN{Alvarez Choque Miguel Angel\\Cuno Salazar Eduardo Joel\\Cruz Gallegos Jeremy Jeison\\Inca Moncca Jherson David\\Quispe Madariaga Jeferson Jofre}
-\IEEEauthorblockA{Universidad Nacional de San Agustín\\Arequipa, Perú}
+\IEEEauthorblockN{Alvarez Choque Miguel Angel, Cuno Salazar Eduardo Joel, Cruz Gallegos Jeremy Jeison,\\Inca Moncca Jherson David, Quispe Madariaga Jeferson Jofre}
+\IEEEauthorblockA{Universidad Nacional de San Agustín, Arequipa, Perú}
 }
 
 \maketitle
@@ -28,11 +40,13 @@ métodos formales, VDM++, transporte público, planificación de rutas, sistemas
 \input{sections/01-introduccion}
 \input{sections/02-related_work}
 \input{sections/03-material_methods}
-\input{sections/04-resultados}
-\input{sections/05-discusion}
-\input{sections/06-conclusiones}
-\input{sections/07-limitaciones}
-\input{sections/08-secciones_finales}
+\input{sections/04-modelo}
+\input{sections/05-pruebas}
+\input{sections/06-resultados}
+\input{sections/07-discusion}
+\input{sections/08-conclusiones}
+\input{sections/09-limitaciones}
+\input{sections/10-recomendaciones}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
