@@ -8,21 +8,16 @@ class Sistema
 types
 
 -- Tipo quote: sentido del recorrido (enumeracion)
-Sentido = <IDA> | <VUELTA>;
+public Sentido = <IDA> | <VUELTA>;
 
 -- Identificador de ruta
-RutaId = nat;
+public RutaId = nat;
 
--- Registro Punto: coordenada geografica.
--- Invariante: lat en [-90, 90] y lng en [-180, 180].
-Punto :: lat : real
-         lng : real;
+-- Punto: par (latitud, longitud)
+public Punto = real * real;
 
--- Registro Recorrido: trayecto de una ruta.
--- Invariante: al menos 2 puntos.
-Recorrido :: ruta : RutaId
-             sentido : Sentido
-             coordenadas : seq of Punto;
+-- Recorrido: (ruta, sentido, coordenadas)
+public Recorrido = RutaId * Sentido * seq of Punto;
 
 instance variables
 
@@ -35,10 +30,10 @@ public distancia : real * real * real * real -> real
 distancia(lat1, lng1, lat2, lng2) ==
   abs(lat1 - lat2) + abs(lng1 - lng2);
 
--- Distancia entre dos puntos de tipo Punto
+-- Distancia entre dos puntos
 public distanciaPunto : Punto * Punto -> real
 distanciaPunto(p1, p2) ==
-  distancia(p1.lat, p1.lng, p2.lat, p2.lng);
+  distancia(p1.#1, p1.#2, p2.#1, p2.#2);
 
 -- Menor de dos reales
 public min2 : real * real -> real
@@ -55,42 +50,40 @@ pre pts <> [];
 
 operations
 
--- Operacion auxiliar para poblar el estado con un recorrido
+-- Poblar el estado con un recorrido
 public agregarRecorrido : Recorrido ==> ()
 agregarRecorrido(rec) ==
   recorridos := recorridos union { rec };
 
--- RF1: busqueda de rutas directas.
--- Devuelve los recorridos que pasan a <= radio del origen y del destino.
+-- RF1: busqueda de rutas directas
 public buscarRutasDirectas : Punto * Punto * real ==> set of Recorrido
 buscarRutasDirectas(A, B, radio) ==
   return { rec | rec in set recorridos &
-                 cercaniaPunto(A, rec.coordenadas) <= radio and
-                 cercaniaPunto(B, rec.coordenadas) <= radio }
+                 cercaniaPunto(A, rec.#3) <= radio and
+                 cercaniaPunto(B, rec.#3) <= radio }
 pre A <> B
 post forall rec in set RESULT &
-       cercaniaPunto(A, rec.coordenadas) <= radio and
-       cercaniaPunto(B, rec.coordenadas) <= radio;
+       cercaniaPunto(A, rec.#3) <= radio and
+       cercaniaPunto(B, rec.#3) <= radio;
 
--- RF2: busqueda de rutas combinadas (con transbordo).
--- Devuelve pares de recorridos con un punto de transbordo viable.
+-- RF2: busqueda de rutas combinadas (con transbordo)
 public buscarRutasCombinadas : Punto * Punto * real * real ==> set of (Recorrido * Recorrido)
 buscarRutasCombinadas(A, B, radio, radioTransbordo) ==
   return { mk_(r1, r2) |
              r1 in set recorridos, r2 in set recorridos &
              r1 <> r2 and
-             cercaniaPunto(A, r1.coordenadas) <= radio and
-             cercaniaPunto(B, r2.coordenadas) <= radio and
-             exists p1 in set elems r1.coordenadas,
-                    p2 in set elems r2.coordenadas &
+             cercaniaPunto(A, r1.#3) <= radio and
+             cercaniaPunto(B, r2.#3) <= radio and
+             exists p1 in set elems r1.#3,
+                    p2 in set elems r2.#3 &
                distanciaPunto(p1, p2) <= radioTransbordo }
 pre A <> B
 post forall mk_(r1, r2) in set RESULT &
        r1 <> r2 and
-       cercaniaPunto(A, r1.coordenadas) <= radio and
-       cercaniaPunto(B, r2.coordenadas) <= radio and
-       exists p1 in set elems r1.coordenadas,
-              p2 in set elems r2.coordenadas &
+       cercaniaPunto(A, r1.#3) <= radio and
+       cercaniaPunto(B, r2.#3) <= radio and
+       exists p1 in set elems r1.#3,
+              p2 in set elems r2.#3 &
          distanciaPunto(p1, p2) <= radioTransbordo;
 
 end Sistema

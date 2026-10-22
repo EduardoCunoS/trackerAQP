@@ -1,0 +1,36 @@
+-- ============================================================
+-- Comandos para el interprete de VDM++ Toolbox 9.0.7
+-- ============================================================
+
+-- Datos de prueba:
+--   Origen A  = mk_(-16.3989, -71.5370)  (Plaza de Armas)
+--   Destino B = mk_(-16.4298, -71.5192)  (Terminal Terrestre)
+
+-- ============================================================
+-- CAPTURA 3: casos de prueba
+-- ============================================================
+
+-- 1) Crear objeto
+create s := new Sistema()
+
+-- 2) Agregar un recorrido
+print s.agregarRecorrido(mk_(1, <IDA>, [mk_(-16.3989, -71.5370), mk_(-16.4150, -71.5280), mk_(-16.4298, -71.5192)]))
+
+-- 3) Caso POSITIVO (radio 0.05 -> devuelve el recorrido)
+print s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05)
+
+-- 4) Caso NEGATIVO (origen lejano -> devuelve {})
+print s.buscarRutasDirectas(mk_(-15.0, -72.0), mk_(-16.4298, -71.5192), 0.05)
+
+-- Rutas combinadas (objeto nuevo con dos recorridos que se cruzan)
+create c := new Sistema()
+print c.agregarRecorrido(mk_(1, <IDA>, [mk_(-16.3989, -71.5370), mk_(-16.4100, -71.5300)]))
+print c.agregarRecorrido(mk_(2, <IDA>, [mk_(-16.4100, -71.5300), mk_(-16.4298, -71.5192)]))
+print c.buscarRutasCombinadas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05, 0.001)
+
+-- ============================================================
+-- CAPTURA 5: validacion de la postcondicion (debe dar true)
+-- Nota: cercaniaPunto es funcion, se califica con el nombre de clase
+-- ============================================================
+
+print forall rec in set s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05) & Sistema`cercaniaPunto(mk_(-16.3989, -71.5370), rec.#3) <= 0.05 and Sistema`cercaniaPunto(mk_(-16.4298, -71.5192), rec.#3) <= 0.05
