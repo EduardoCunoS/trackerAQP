@@ -317,14 +317,6 @@ Adicionalmente, el modelo NuSMV es una abstracción del ciclo de la solicitud: n
 
 Como trabajo futuro se propone: (i) calcular la distancia punto-segmento para aproximar mejor la cercanía a la polilínea; (ii) incorporar la longitud mínima de segmento en la búsqueda combinada; (iii) completar la verificación demostrando formalmente las obligaciones de prueba; (iv) ampliar el modelo con cálculo de tiempo estimado y ordenamiento de resultados; (v) integrar los modelos VDM++ y NuSMV con la implementación web (Django y React); y (vi) ampliar los casos de prueba con datos reales de las rutas de Arequipa.
 
-## 12. Enlaces de la entrega
-
-- **Video de la presentación:** disponible en el Aula Virtual.
-- **Repositorio del proyecto:** incluye el código de especificación formal, las salidas de VDMTools y NuSMV, y el archivo `README_Especificacion_Formal.md`.
-- **Código de especificación formal:** `modelo_rutas.vdmpp`, `rutas.smv`, `rutas_propiedad_falsa.smv` y sus salidas.
-
-El documento PDF de entrega incluye el artículo y las diapositivas de la presentación.
-
 ## Referencias
 
 1. J. S. Fitzgerald, P. G. Larsen y S. Sahara, "VDMTools: Advances in Support for Formal Modeling in VDM", *ACM SIGPLAN Notices*, vol. 43, n.º 2, pp. 3–11, 2008. DOI: 10.1145/1361213.1361214.

@@ -19,6 +19,9 @@
   showstringspaces=false
 }
 
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+
 \begin{document}
 
 \title{Sistema de Planificación de Viajes en Transporte Público con Especificación en VDM++ y Verificación de Estados en NuSMV para la Ciudad de Arequipa}
@@ -49,7 +52,6 @@ métodos formales, VDM++, NuSMV, LTL, transporte público, planificación de rut
 \input{sections/08-conclusiones}
 \input{sections/09-limitaciones}
 \input{sections/10-recomendaciones}
-\input{sections/11-anexo}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
