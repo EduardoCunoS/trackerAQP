@@ -1,0 +1,91 @@
+\section{Modelo de transición de estados en NuSMV}
+\label{sec:nusmv}
+
+El modelo VDM++ de la Sección~\ref{sec:modelo} especifica el algoritmo de búsqueda. De forma complementaria, el ciclo de vida de una solicitud se representa como un sistema de transición de estados finito y se verifica con NuSMV 2.7.1~\cite{nusmv}. Este modelo no describe el algoritmo ni los datos de las rutas: describe los estados observables entre la recepción de una solicitud y la presentación del resultado. La separación permite validar el algoritmo con VDM++ y verificar el flujo de la solicitud con una herramienta de model checking.
+
+\subsection{Estados y variables}
+\label{sec:nusmv-estados}
+
+El modelo define cinco estados (Tabla~\ref{tab:nusmv-estados}). El estado \texttt{solicitud\_invalida} se denomina así, y no \texttt{error}, para distinguir un rechazo por validación de un fallo técnico del sistema.
+
+\begin{table}[!t]
+\centering
+\caption{Estados del modelo de transición de la solicitud.}
+\label{tab:nusmv-estados}
+\small
+\begin{tabular}{|l|p{4.6cm}|}
+\hline
+Estado & Significado \\
+\hline
+\texttt{inicio} & Espera de una solicitud \\
+\hline
+\texttt{buscando} & Solicitud válida en proceso \\
+\hline
+\texttt{con\_ruta} & Resultado con al menos una ruta \\
+\hline
+\texttt{sin\_ruta} & Resultado sin rutas \\
+\hline
+\texttt{solicitud\_invalida} & Solicitud rechazada por validación \\
+\hline
+\end{tabular}
+\end{table}
+
+Las variables del modelo son:
+\begin{itemize}
+  \item \texttt{estado}, con dominio \texttt{inicio}, \texttt{buscando}, \texttt{con\_ruta}, \texttt{sin\_ruta} y \texttt{solicitud\_invalida}: controla la transición y la respuesta observable.
+  \item \texttt{solicitud}, con dominio \texttt{ninguna}, \texttt{valida} e \texttt{invalida}: representa la entrada del usuario.
+  \item \texttt{rutas\_encontradas}, en el rango \texttt{0..10}: determina si el resultado es \texttt{con\_ruta} o \texttt{sin\_ruta}.
+  \item \texttt{consultas}, en el rango \texttt{0..10}: cuenta las solicitudes válidas procesadas.
+\end{itemize}
+
+El estado inicial es \texttt{estado = inicio}, \texttt{solicitud = ninguna}, \texttt{rutas\_encontradas = 0} y \texttt{consultas = 0}.
+
+\subsection{Transiciones y asignaciones}
+\label{sec:nusmv-transiciones}
+
+Las transiciones están gobernadas por guardas: \texttt{inicio} pasa a \texttt{buscando} si \texttt{solicitud = valida}, y a \texttt{solicitud\_invalida} si \texttt{solicitud = invalida}; \texttt{buscando} pasa a \texttt{con\_ruta} si \texttt{rutas\_encontradas > 0}, y a \texttt{sin\_ruta} si \texttt{rutas\_encontradas = 0}; los estados de resultado y de solicitud inválida vuelven a \texttt{inicio}. La asignación de \texttt{estado} se muestra en la Figura~\ref{fig:nusmv-transiciones}.
+
+\begin{figure}[!t]
+\centering
+\begin{lstlisting}
+next(estado) := case
+  estado = inicio & solicitud = valida      : buscando;
+  estado = inicio & solicitud = invalida    : solicitud_invalida;
+  estado = buscando & rutas_encontradas > 0 : con_ruta;
+  estado = buscando & rutas_encontradas = 0 : sin_ruta;
+  estado = con_ruta                         : inicio;
+  estado = sin_ruta                         : inicio;
+  estado = solicitud_invalida               : inicio;
+  TRUE                                      : estado;
+esac;
+\end{lstlisting}
+\caption{Asignación de la variable \texttt{estado} en NuSMV.}
+\label{fig:nusmv-transiciones}
+\end{figure}
+
+Al iniciar una búsqueda válida, \texttt{rutas\_encontradas} se asigna de forma no determinista en \texttt{0..3} y \texttt{consultas} se incrementa; en los demás estados ambas variables conservan su valor. La asignación no determinista representa los posibles resultados del algoritmo, no su lógica interna. \texttt{solicitud} cambia solo en \texttt{inicio}, de modo que la entrada permanece estable durante la búsqueda.
+
+\subsection{Propiedades LTL y resultados}
+\label{sec:nusmv-resultados}
+
+La verificación se realizó con NuSMV 2.7.1. La Figura~\ref{fig:nusmv-propiedades} lista las ocho propiedades LTL verificadas.
+
+\begin{figure}[!t]
+\centering
+\begin{lstlisting}
+LTLSPEC G (estado = con_ruta -> rutas_encontradas > 0);
+LTLSPEC G (estado = sin_ruta -> rutas_encontradas = 0);
+LTLSPEC G (estado = buscando -> F resultado);
+LTLSPEC G (estado = inicio & solicitud = valida -> F resultado);
+LTLSPEC G (estado = con_ruta -> X estado = inicio);
+LTLSPEC G (estado = sin_ruta -> X estado = inicio);
+LTLSPEC G (estado = solicitud_invalida -> X estado = inicio);
+LTLSPEC G (resultado -> consultas > 0);
+\end{lstlisting}
+\caption{Propiedades LTL verificadas en NuSMV.}
+\label{fig:nusmv-propiedades}
+\end{figure}
+
+Las ocho propiedades devuelven \texttt{true}. En particular, toda solicitud válida alcanza eventualmente \texttt{con\_ruta} o \texttt{sin\_ruta}; los estados de resultado implican el número de rutas correspondiente; y los estados transitorios vuelven a \texttt{inicio}. La propiedad \texttt{G (estado = inicio -> F estado = con\_ruta)} devuelve \texttt{false}: si \texttt{solicitud} permanece en \texttt{ninguna}, el sistema permanece en \texttt{inicio} y no alcanza \texttt{con\_ruta}. El contraejemplo confirma que el modelo distingue una búsqueda sin resultados de una búsqueda que no se inició; el requerimiento correcto es alcanzar un resultado, no garantizar que toda solicitud encuentre una ruta.
+
+El modelo es una abstracción del ciclo de la solicitud. El backend actual es stateless y el modelo no verifica el código Django/React; la verificación se aplica al modelo abstracto y complementa la validación VDM++ del algoritmo descrita en las Secciones~\ref{sec:modelo} y~\ref{sec:pruebas}.

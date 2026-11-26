@@ -9,6 +9,13 @@
 *.spl
 *.synctex.gz
 *.pdf
+
+# PDFs de la entrega final que sí se versionan
+!article.pdf
+!Presentacion_Final_AQP.pdf
+!Entrega_Final_AQP.pdf
+!Ejercicio_Practico_4_GA/Ejercicio_Practico_4.pdf
+!Ejercicio_Practico_4_GA/Anexo_Incidencias.pdf
 *.dvi
 *.ps
 

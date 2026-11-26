@@ -1,0 +1,36 @@
+*** This is NuSMV 2.7.1 (compiled on Mon Sep 29 15:48:16 2025)
+*** Enabled addons are: compass
+*** For more information on NuSMV see <http://nusmv.fbk.eu>
+*** or email to <nusmv-users@list.fbk.eu>.
+*** Please report bugs to <Please report bugs to <nusmv-users@fbk.eu>>
+
+*** Copyright (c) 2010-2025, Fondazione Bruno Kessler
+
+*** This version of NuSMV is linked to the CUDD library version 2.4.1
+*** Copyright (c) 1995-2004, Regents of the University of Colorado
+
+*** This version of NuSMV is linked to the MiniSat SAT solver. 
+*** See http://minisat.se/MiniSat.html
+*** Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
+*** Copyright (c) 2007-2010, Niklas Sorensson
+
+-- specification  G (estado = con_ruta -> rutas_encontradas > 0)  is true
+-- specification  G (estado = sin_ruta -> rutas_encontradas = 0)  is true
+-- specification  G (estado = buscando ->  F resultado)  is true
+-- specification  G ((estado = inicio & solicitud = valida) ->  F resultado)  is true
+-- specification  G (estado = con_ruta ->  X estado = inicio)  is true
+-- specification  G (estado = sin_ruta ->  X estado = inicio)  is true
+-- specification  G (estado = solicitud_invalida ->  X estado = inicio)  is true
+-- specification  G (estado = inicio ->  F estado = con_ruta)  is false
+-- as demonstrated by the following execution sequence
+Trace Description: LTL Counterexample 
+Trace Type: Counterexample 
+  -- Loop starts here
+  -> State: 1.1 <-
+    estado = inicio
+    solicitud = ninguna
+    rutas_encontradas = 0
+    consultas = 0
+    resultado = FALSE
+  -> State: 1.2 <-
+-- specification  G (resultado -> consultas > 0)  is true

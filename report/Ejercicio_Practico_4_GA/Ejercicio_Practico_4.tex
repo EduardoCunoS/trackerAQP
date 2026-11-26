@@ -1,0 +1,415 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\title{\textbf{Ejercicio Práctico 4}\\[2mm]
+\large Sistema de Transición de Estados en NuSMV: Búsqueda de Rutas}
+\author{Proyecto: Sistema de Planificación de Viajes en Transporte Público (aqpTracker)}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Objetivo}
+
+Modelar como sistema de transición de estados el ciclo de una solicitud de búsqueda de rutas de transporte público, identificando estados, variables, condiciones de transición y actualizaciones de valores, y verificando un requerimiento mediante los operadores temporales \texttt{G} y \texttt{F} de NuSMV.
+
+\section{¿Qué es un sistema de transición de estados?}
+
+Un sistema de transición de estados (STS, por sus siglas en inglés) es una estructura formal:
+\[
+M = (S, S_0, \rightarrow, AP, L)
+\]
+donde \(S\) es un conjunto finito de estados, \(S_0 \subseteq S\) son los estados iniciales, \(\rightarrow \subseteq S \times S\) es la relación de transición, \(AP\) es un conjunto de proposiciones atómicas y \(L : S \rightarrow 2^{AP}\) indica qué proposiciones son verdaderas en cada estado.
+
+En NuSMV el sistema se describe con variables de dominio finito, asignaciones iniciales (\texttt{init}) y asignaciones de siguiente estado (\texttt{next}). Las propiedades se escriben en LTL:
+\begin{itemize}
+  \item \texttt{G} \(\varphi\) (``globalmente \(\varphi\)''): \(\varphi\) se cumple en todos los estados de todos los caminos. Se usa para propiedades de seguridad o invariantes.
+  \item \texttt{F} \(\varphi\) (``eventualmente \(\varphi\)''): \(\varphi\) se cumple en algún estado futuro de todos los caminos. Se usa para propiedades de vivacidad o alcanzabilidad.
+\end{itemize}
+
+\subsection{Contexto metodológico}
+
+La traducción de modelos de estado a verificadores simbólicos se ha aplicado en diversos dominios. Kochaleema y Santhosh Kumar (2022) traducen Statecharts UML a sistemas de transición etiquetados y verifican propiedades CTL/LTL; Hlaoui y Ayari (2025) compilan modelos de proceso correctos por construcción a NuSMV; y Xavier et al. (2024) sintetizan máquinas de estado desde registros de eventos y las verifican con NuSMV. Este trabajo adopta el mismo enfoque: un modelo abstracto de estados, propiedades LTL y verificación con NuSMV.
+
+\section{Descripción del modelo}
+
+Se modela el ciclo de una solicitud de búsqueda de rutas. El sistema parte en \texttt{inicio}, esperando una solicitud. Si la solicitud es válida, pasa a \texttt{buscando}; si es inválida, pasa a \texttt{solicitud\_invalida}. Cuando la búsqueda termina, el sistema pasa a \texttt{con\_ruta} si se encontró al menos una ruta, o a \texttt{sin\_ruta} si no se encontró ninguna. Los estados \texttt{con\_ruta}, \texttt{sin\_ruta} y \texttt{solicitud\_invalida} son transitorios: después de mostrar el resultado, el sistema vuelve a \texttt{inicio}.
+
+La variable \texttt{solicitud} representa la entrada del usuario y se actualiza de forma no determinista, modelando que en cada paso puede llegar una solicitud válida, una inválida o ninguna. La variable \texttt{rutas\_encontradas} se asigna al iniciar una búsqueda válida y determina el resultado. La variable \texttt{consultas} cuenta las solicitudes válidas procesadas.
+
+El modelo es una abstracción del flujo de los endpoints de búsqueda directa y combinada: el backend actual es stateless (responde a una petición POST), pero la interfaz de usuario sí atraviesa estos estados. El modelo sirve como especificación del comportamiento esperado y como base para una futura máquina de estados en el frontend o en un servicio de búsqueda. La distinción entre búsqueda directa y combinada se deja al algoritmo (VDM++); la máquina de estados modela el ciclo común de la solicitud.
+
+\section{Estados, variables y estado inicial}
+
+\subsection{Estados}
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Estado} & \textbf{Significado} \\
+\hline
+\texttt{inicio} & Esperando una solicitud de búsqueda \\
+\hline
+\texttt{buscando} & Solicitud válida en proceso; abstrae búsqueda directa y combinada \\
+\hline
+\texttt{con\_ruta} & La búsqueda encontró al menos una ruta \\
+\hline
+\texttt{sin\_ruta} & La búsqueda no encontró rutas \\
+\hline
+\texttt{solicitud\_invalida} & La solicitud es inválida \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Variables}
+
+\begin{center}
+\small
+\begin{tabular}{|l|p{5.8cm}|p{6.2cm}|}
+\hline
+\textbf{Variable} & \textbf{Dominio} & \textbf{Descripción} \\
+\hline
+\texttt{estado} & \texttt{\{inicio, buscando, con\_ruta, sin\_ruta, solicitud\_invalida\}} & Estado actual del proceso \\
+\hline
+\texttt{solicitud} & \texttt{\{ninguna, valida, invalida\}} & Entrada del usuario \\
+\hline
+\texttt{rutas\_encontradas} & \texttt{0..10} & Número de rutas devueltas por la búsqueda \\
+\hline
+\texttt{consultas} & \texttt{0..10} & Número de solicitudes válidas procesadas \\
+\hline
+\end{tabular}
+\end{center}
+
+Estado inicial: \texttt{estado = inicio}, \texttt{solicitud = ninguna}, \texttt{rutas\_encontradas = 0}, \texttt{consultas = 0}.
+
+\subsection{Diagrama de estados}
+
+\begin{center}
+\begin{tikzpicture}[->,>=stealth,shorten >=1pt,auto,node distance=3.2cm,semithick]
+  \node[state,initial] (inicio) {\texttt{inicio}};
+  \node[state] (buscando) [right=of inicio] {\texttt{buscando}};
+  \node[state] (conruta) [right=of buscando] {\texttt{con\_ruta}};
+  \node[state] (sinruta) [below=of buscando] {\texttt{sin\_ruta}};
+  \node[state] (invalida) [below=of inicio] {\texttt{solicitud\_invalida}};
+  \path
+    (inicio) edge node[above]{\texttt{solicitud} = \texttt{valida}} (buscando)
+    (inicio) edge node[left]{\texttt{solicitud} = \texttt{invalida}} (invalida)
+    (buscando) edge node[above]{\texttt{rutas\_encontradas} $>$ 0} (conruta)
+    (buscando) edge node[right]{\texttt{rutas\_encontradas} = 0} (sinruta)
+    (conruta) edge[bend left=25] node[above]{resultado} (inicio)
+    (sinruta) edge[bend right=25] node[below]{resultado} (inicio)
+    (invalida) edge[bend right=25] node[left]{reinicio} (inicio);
+\end{tikzpicture}
+\end{center}
+
+\section{Condiciones de transición y actualizaciones}
+
+\begin{center}
+\begin{tabular}{|p{2.4cm}|p{4.6cm}|p{2.6cm}|p{4.6cm}|}
+\hline
+\textbf{Estado actual} & \textbf{Condición} & \textbf{Estado siguiente} & \textbf{Actualización} \\
+\hline
+\texttt{inicio} & \texttt{solicitud = valida} & \texttt{buscando} & \texttt{consultas := consultas + 1}; se asigna \texttt{rutas\_encontradas} \\
+\hline
+\texttt{inicio} & \texttt{solicitud = invalida} & \texttt{solicitud\_invalida} & sin cambios en contadores \\
+\hline
+\texttt{buscando} & \texttt{rutas\_encontradas > 0} & \texttt{con\_ruta} & sin cambios \\
+\hline
+\texttt{buscando} & \texttt{rutas\_encontradas = 0} & \texttt{sin\_ruta} & sin cambios \\
+\hline
+\texttt{con\_ruta} & --- & \texttt{inicio} & sin cambios \\
+\hline
+\texttt{sin\_ruta} & --- & \texttt{inicio} & sin cambios \\
+\hline
+\texttt{solicitud\_invalida} & --- & \texttt{inicio} & sin cambios \\
+\hline
+\end{tabular}
+\end{center}
+
+Actualizaciones de las variables en cada transición:
+
+\begin{center}
+\begin{tabular}{|l|p{11cm}|}
+\hline
+\textbf{Variable} & \textbf{Actualización} \\
+\hline
+\texttt{solicitud} & Si \texttt{estado = inicio}, se actualiza de forma no determinista a \texttt{ninguna}, \texttt{valida} o \texttt{invalida}; en otro caso, permanece. \\
+\hline
+\texttt{rutas\_encontradas} & Si \texttt{estado = inicio} y \texttt{solicitud = valida}, se asigna un valor no determinista en \texttt{0..3}; en otro caso, permanece. \\
+\hline
+\texttt{consultas} & Si \texttt{estado = inicio} y \texttt{solicitud = valida} y \texttt{consultas < 10}, se incrementa en 1; en otro caso, permanece. \\
+\hline
+\end{tabular}
+\end{center}
+
+La asignación de \texttt{rutas\_encontradas} al iniciar la búsqueda permite que el estado \texttt{buscando} clasifique el resultado en el paso siguiente. La variable \texttt{consultas} solo aumenta con solicitudes válidas, de modo que una solicitud inválida no cuenta como consulta.
+
+\section{Código NuSMV}
+
+El código completo del modelo se presenta en la Figura~\ref{fig:codigo-rutas}.
+
+\begin{figure}[H]
+\centering
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+MODULE main
+VAR
+  estado            : {inicio, buscando, con_ruta, sin_ruta, solicitud_invalida};
+  solicitud         : {ninguna, valida, invalida};
+  rutas_encontradas : 0..10;
+  consultas         : 0..10;
+
+ASSIGN
+  init(estado)            := inicio;
+  init(solicitud)         := ninguna;
+  init(rutas_encontradas) := 0;
+  init(consultas)         := 0;
+
+  next(estado) := case
+    estado = inicio & solicitud = valida      : buscando;
+    estado = inicio & solicitud = invalida    : solicitud_invalida;
+    estado = buscando & rutas_encontradas > 0 : con_ruta;
+    estado = buscando & rutas_encontradas = 0 : sin_ruta;
+    estado = con_ruta                         : inicio;
+    estado = sin_ruta                         : inicio;
+    estado = solicitud_invalida                            : inicio;
+    TRUE                                      : estado;
+  esac;
+
+  next(solicitud) := case
+    estado = inicio : {ninguna, valida, invalida};
+    TRUE            : solicitud;
+  esac;
+
+  next(rutas_encontradas) := case
+    estado = inicio & solicitud = valida : {0, 1, 2, 3};
+    TRUE                                 : rutas_encontradas;
+  esac;
+
+  next(consultas) := case
+    estado = inicio & solicitud = valida & consultas < 10 : consultas + 1;
+    TRUE                                                   : consultas;
+  esac;
+
+DEFINE
+  resultado := (estado = con_ruta | estado = sin_ruta);
+
+LTLSPEC G (estado = con_ruta -> rutas_encontradas > 0);
+LTLSPEC G (estado = sin_ruta -> rutas_encontradas = 0);
+LTLSPEC G (estado = buscando -> F resultado);
+LTLSPEC G (estado = inicio & solicitud = valida -> F resultado);
+LTLSPEC G (estado = con_ruta -> X estado = inicio);
+LTLSPEC G (estado = sin_ruta -> X estado = inicio);
+LTLSPEC G (estado = solicitud_invalida -> X estado = inicio);
+LTLSPEC G (resultado -> consultas > 0);
+\end{lstlisting}
+\caption{Código NuSMV del sistema de transición de estados para la búsqueda de rutas.}
+\label{fig:codigo-rutas}
+\end{figure}
+
+La definición \texttt{resultado} es un alias que abrevia \texttt{estado = con\_ruta | estado = sin\_ruta}; se usa para simplificar la lectura de las propiedades.
+
+\section{Requerimiento verificado con G y F}
+
+\subsection{Requerimiento principal}
+
+\textbf{R3:} ``Toda solicitud válida eventualmente alcanza un resultado: \texttt{con\_ruta} o \texttt{sin\_ruta}.''
+
+Fórmula LTL:
+
+\begin{lstlisting}
+LTLSPEC G (estado = inicio & solicitud = valida -> F resultado);
+\end{lstlisting}
+
+La fórmula combina \texttt{G} y \texttt{F}: \texttt{G} exige que la implicación se cumpla en todos los estados alcanzables, y \texttt{F} exige que, cuando llega una solicitud válida, exista un estado futuro en el que la búsqueda haya terminado con o sin rutas. La propiedad se cumple porque una solicitud válida en \texttt{inicio} conduce a \texttt{buscando} y, en el paso siguiente, \texttt{rutas\_encontradas} determina \texttt{con\_ruta} o \texttt{sin\_ruta}. Además, la condición antecedente es alcanzable (\texttt{SPEC EF (estado = inicio \& solicitud = valida)} devuelve \texttt{true}), por lo que la propiedad no es vacua.
+
+\subsection{Requerimientos complementarios}
+
+\begin{center}
+\begin{tabular}{|l|p{5.4cm}|p{5.4cm}|l|}
+\hline
+\textbf{ID} & \textbf{Requerimiento} & \textbf{Fórmula LTL} & \textbf{Tipo} \\
+\hline
+R1 & No se declara éxito sin rutas & \texttt{G (estado = con\_ruta -> rutas\_encontradas > 0)} & Seguridad \\
+\hline
+R2 & No se declara fracaso con rutas & \texttt{G (estado = sin\_ruta -> rutas\_encontradas = 0)} & Seguridad \\
+\hline
+R4 & Toda búsqueda en curso termina & \texttt{G (estado = buscando -> F resultado)} & Vivacidad \\
+\hline
+R5 & Los resultados son transitorios & \texttt{G (estado = con\_ruta -> X estado = inicio)} y \texttt{G (estado = sin\_ruta -> X estado = inicio)} & Seguridad \\
+\hline
+R6 & Una solicitud inválida vuelve al inicio & \texttt{G (estado = solicitud\_invalida -> X estado = inicio)} & Seguridad \\
+\hline
+R7 & Un resultado implica al menos una consulta & \texttt{G (resultado -> consultas > 0)} & Seguridad \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Ejecución y resultados}
+
+Ejecutar:
+
+\begin{lstlisting}
+NuSMV rutas.smv
+\end{lstlisting}
+
+Salida esperada:
+
+\begin{lstlisting}
+-- specification  G (estado = con_ruta -> rutas_encontradas > 0)  is true
+-- specification  G (estado = sin_ruta -> rutas_encontradas = 0)  is true
+-- specification  G (estado = buscando ->  F resultado)  is true
+-- specification  G ((estado = inicio & solicitud = valida) ->  F resultado)  is true
+-- specification  G (estado = con_ruta ->  X estado = inicio)  is true
+-- specification  G (estado = sin_ruta ->  X estado = inicio)  is true
+-- specification  G (estado = solicitud_invalida ->  X estado = inicio)  is true
+-- specification  G (resultado -> consultas > 0)  is true
+\end{lstlisting}
+
+Todas las propiedades se verifican. Esto significa que, para todas las ejecuciones posibles del modelo, se cumplen las invariantes y las propiedades de vivacidad indicadas.
+
+\subsection{Prueba adicional: una propiedad que no se cumple}
+
+Si se agrega la fórmula:
+
+\begin{lstlisting}
+LTLSPEC G (estado = inicio -> F estado = con_ruta);
+\end{lstlisting}
+
+NuSMV responde \texttt{is false} y devuelve un contraejemplo: una ejecución en la que \texttt{solicitud} permanece en \texttt{ninguna} y el sistema se queda en \texttt{inicio} indefinidamente. En esa ejecución nunca se alcanza \texttt{con\_ruta}. Esto no es un fallo del modelo: refleja que no toda solicitud produce una ruta; puede no haber solicitud, puede ser inválida o puede no haber rutas disponibles. El requerimiento correcto es R3 (alcanzar un resultado), no ``toda solicitud encuentra una ruta''.
+
+El modelo con esta propiedad adicional y su salida se conservan en \texttt{rutas\_propiedad\_falsa.smv} y \texttt{salida\_rutas\_falsa\_nusmv.txt}.
+
+Traza resumida del contraejemplo:
+
+\begin{lstlisting}
+Estado 1.1: estado = inicio, solicitud = ninguna, rutas_encontradas = 0, consultas = 0
+Estado 1.2: estado = inicio, solicitud = ninguna, rutas_encontradas = 0, consultas = 0
+\end{lstlisting}
+
+\section{Relación con el proyecto}
+
+\begin{center}
+\begin{tabular}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Elemento NuSMV} & \textbf{Elemento del proyecto} \\
+\hline
+\texttt{solicitud} & Petición POST a \texttt{buscar\_rutas\_view} o \texttt{buscar\_rutas\_combinadas\_view} \\
+\hline
+\texttt{rutas\_encontradas} & Longitud de \texttt{rutas\_directas} o \texttt{rutas\_combinadas} en la respuesta \\
+\hline
+\texttt{consultas} & Contador de búsquedas realizadas \\
+\hline
+\texttt{estado} & Estados de la interfaz: espera, cargando, resultados, sin resultados, solicitud inválida \\
+\hline
+\texttt{con\_ruta} & RF1/RF2 con al menos una ruta devuelta \\
+\hline
+\texttt{sin\_ruta} & RF1/RF2 sin rutas que cumplan las restricciones \\
+\hline
+\end{tabular}
+\end{center}
+
+Las variables \texttt{consultas} y \texttt{estado} son de seguimiento en el modelo; el backend actual no las persiste. El backend actual es stateless: cada petición se procesa y se responde. El modelo no afirma que el backend tenga una máquina de estados persistente; especifica el comportamiento observable de una solicitud y puede servir para implementar una máquina de estados en el frontend o en un futuro servicio de búsqueda. La propiedad R1 garantiza que la interfaz no muestre ``ruta encontrada'' si el resultado está vacío; R2 garantiza que no muestre ``sin ruta'' si hay resultados.
+
+\section{Justificación del diseño}
+
+Esta sección explica por qué el modelo tiene estos estados, variables, condiciones y asignaciones, que es el punto central de la presentación solicitada.
+
+\subsection{¿Por qué estos estados?}
+
+\begin{itemize}
+  \item \texttt{inicio}: representa el punto de entrada y el estado de reposo del sistema; sin él no se distingue ``esperando solicitud'' de ``procesando''.
+  \item \texttt{buscando}: separa la recepción de la solicitud de la obtención del resultado; modela el tiempo de espera y permite verificar que toda búsqueda termina.
+  \item \texttt{con\_ruta} y \texttt{sin\_ruta}: son los dos resultados posibles de RF1/RF2. Distinguirlos evita mostrar ``sin ruta'' cuando sí hay resultados y viceversa.
+  \item \texttt{solicitud\_invalida}: separa una solicitud inválida de una búsqueda sin resultados. Sin este estado, una solicitud inválida se confundiría con ``no hay rutas''.
+  \item Los estados de resultado son transitorios: la interfaz muestra el resultado y vuelve a \texttt{inicio}, por lo que no se necesitan estados persistentes.
+  \item No se separan \texttt{buscando\_directas} y \texttt{buscando\_combinadas} porque la diferencia es algorítmica (VDM++), no del ciclo de vida de la solicitud.
+\end{itemize}
+
+\subsection{¿Por qué estas variables?}
+
+\begin{itemize}
+  \item \texttt{estado}: variable de control que determina la transición y la respuesta de la interfaz.
+  \item \texttt{solicitud}: modela la entrada del usuario; es la condición que dispara la validación y la búsqueda.
+  \item \texttt{rutas\_encontradas}: es el dato que decide si el resultado es \texttt{con\_ruta} o \texttt{sin\_ruta}.
+  \item \texttt{consultas}: registra cuántas solicitudes válidas se procesaron; sirve para trazabilidad y para verificar que una solicitud inválida no cuenta como consulta.
+  \item No se modelan coordenadas, radio ni transbordos porque son parámetros del algoritmo de búsqueda, no del ciclo de vida de la solicitud; esos elementos están en el modelo VDM++.
+\end{itemize}
+
+\subsection{¿Por qué estas condiciones?}
+
+\begin{itemize}
+  \item \texttt{solicitud = valida} / \texttt{solicitud = invalida}: separan la validación de la búsqueda; una solicitud inválida no debe llegar al buscador.
+  \item \texttt{rutas\_encontradas > 0} / \texttt{rutas\_encontradas = 0}: clasifican el resultado de la búsqueda en éxito o ausencia de rutas.
+  \item La condición de retorno a \texttt{inicio} no depende de una variable adicional: una vez mostrado el resultado, el ciclo vuelve a empezar.
+\end{itemize}
+
+\subsection{¿Por qué estas asignaciones?}
+
+\begin{itemize}
+  \item \texttt{rutas\_encontradas} se asigna al iniciar la búsqueda: así el estado \texttt{buscando} puede clasificar el resultado en el paso siguiente y la asignación es no determinista para cubrir todos los resultados posibles.
+  \item \texttt{consultas} solo incrementa con solicitudes válidas: evita contar intentos inválidos y mantiene la coherencia con \texttt{resultado -> consultas > 0}.
+  \item \texttt{solicitud} solo cambia en \texttt{inicio}: evita que la entrada cambie mientras la búsqueda está en curso.
+  \item Los estados de resultado vuelven a \texttt{inicio}: garantizan que la interfaz no quede bloqueada y que el sistema pueda recibir otra solicitud.
+\end{itemize}
+
+\subsection{Conclusión de la justificación}
+
+El diseño mantiene el modelo mínimo necesario para representar el ciclo de una solicitud, separa validación, búsqueda y resultado, y deja los detalles algorítmicos (rutas directas/combinadas, radios, transbordos) en VDM++. Esto hace que la máquina de estados sea comprensible, verificable y trazable con los requerimientos RF1/RF2.
+
+\section{Conclusión}
+
+Se definió un sistema de transición de estados con cinco estados, cuatro variables, condiciones de transición y actualizaciones de valores. El modelo se codificó en NuSMV y se verificaron propiedades de seguridad y vivacidad con \texttt{G} y \texttt{F}. La propiedad principal garantiza que toda solicitud válida eventualmente alcanza un resultado; las propiedades complementarias garantizan la coherencia entre el estado y el número de rutas, la terminalidad de la búsqueda y el retorno al estado inicial. El contraejemplo de la propiedad ``toda solicitud encuentra una ruta'' muestra que el modelo distingue correctamente entre una búsqueda sin resultados y una búsqueda exitosa.
+
+\section{Cómo ejecutar}
+
+\begin{enumerate}
+  \item Descargar NuSMV desde \url{https://nusmv.fbk.eu/downloads.html}.
+  \item Guardar el código en \texttt{rutas.smv}.
+  \item Ejecutar \texttt{NuSMV rutas.smv}.
+  \item Opcionalmente, abrir la consola interactiva de NuSMV y ejecutar \texttt{check\_ltlspec}.
+\end{enumerate}
+
+\section{Referencias}
+
+\begin{itemize}
+  \item NuSMV. \emph{NuSMV: A New Symbolic Model Checker}. \url{https://nusmv.fbk.eu/}
+  \item Kochaleema, K. H.; Santhosh Kumar, G. \emph{Generic Methodology for Formal Verification of UML Models}. Defence Science Journal, 72(1), 40--48, 2022. DOI: 10.14429/dsj.72.17228.
+  \item Hlaoui, Y. B.; Ayari, S. \emph{An Approach to Develop Correct-by-Construction Business Process Models Using a Formal Domain Specific Language}. Journal of Software: Evolution and Process, 37(2), e2762, 2025. DOI: 10.1002/smr.2762.
+  \item Xavier, M.; Dubinin, V.; Patil, S.; Vyatkin, V. \emph{A Framework for the Generation of Monitor and Plant Model From Event Logs Using Process Mining for Formal Verification of Event-Driven Systems}. IEEE Open Journal of the Industrial Electronics Society, 5, 517--534, 2024. DOI: 10.1109/OJIES.2024.3406059.
+  \item Nivon, Q.; Salaün, G. \emph{Debugging of BPMN Processes Using Coloring Techniques}. Lecture Notes in Computer Science, 2022, pp. 90--109. DOI: 10.1007/978-3-031-20872-0\_6.
+\end{itemize}
+
+\section{Anexo: modelo de incidencias}
+
+Como ejemplo complementario, el modelo del ciclo de vida de una incidencia del foro se conserva en:
+\begin{itemize}
+  \item \texttt{Anexo\_Incidencias.md} y \texttt{Anexo\_Incidencias.tex}: informe del modelo de incidencias.
+  \item \texttt{incidencias.smv}: código NuSMV del modelo de incidencias.
+  \item \texttt{salida\_nusmv.txt}: salida de NuSMV para el modelo de incidencias.
+\end{itemize}
+
+Ese modelo no es el foco principal de este ejercicio; se mantiene porque el foro forma parte del proyecto y porque ilustra otro tipo de máquina de estados con variables de tiempo y notificación.
+
+\end{document}

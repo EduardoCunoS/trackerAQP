@@ -1,0 +1,17 @@
+The VDM++ Toolbox v9.0.7 - Sat 09-Jun-2018 10:11:21 +0900
+VDM Toolbox is currently developed with the cooperation of Research Center
+for Architecture-Oriented Formal Methods of Kyusyu University.
+vpp> Parsing "math.vpp" (Plain Text) ... done
+vpp> vpp> Type checking MATH ... done
+vpp> vpp> Parsing "modelo_rutas.vdmpp" (Plain Text) ... done
+vpp> Type checking Sistema ... done
+vpp> Initializing specification ... done
+vpp> vpp> (no return value)
+vpp> 3925.589678312824
+vpp> { mk_( 1, <IDA>, [ mk_( -16.3989, -71.53700000000001 ), mk_( -16.415, -71.52800000000001 ), mk_( -16.4298, -71.5192 ) ] ) }
+vpp> {  }
+vpp> vpp> (no return value)
+vpp> (no return value)
+vpp> { mk_( mk_( 1, <IDA>, [ mk_( -16.3989, -71.53700000000001 ), mk_( -16.41, -71.53 ) ] ), mk_( 2, <IDA>, [ mk_( -16.41, -71.53 ), mk_( -16.4298, -71.5192 ) ] ) ) }
+vpp> true
+vpp> 

@@ -122,6 +122,13 @@ npm run dev                     # http://localhost:5173
 - **rutas**: `Empresa`, `Ruta`, `Recorrido`, `Paradero`, `RecorridoParadero`.
 - **foro**: `Distrito`, `Estado`, `Incidencia`, `IncidenciaImagen`, `Comentario`, `TipoReaccion`, `ReaccionIncidencia`, `ReaccionComentario`, `Reporte`, `Notificacion`.
 
+## Especificación formal
+
+- Guía rápida: [report/README_Especificacion_Formal.md](report/README_Especificacion_Formal.md)
+- Modelo VDM++: [report/modelo_rutas.vdmpp](report/modelo_rutas.vdmpp)
+- Modelo NuSMV: [report/Ejercicio_Practico_4_GA/rutas.smv](report/Ejercicio_Practico_4_GA/rutas.smv)
+- Artículo y presentación final: [report/Entrega_Final_AQP.pdf](report/Entrega_Final_AQP.pdf)
+
 ## 📄 Licencia
 
 Proyecto académico. Uso libre con fines educativos.

@@ -1,28 +1,31 @@
 \section{Introducción}
 \label{sec:introduccion}
 
+El presente trabajo propone una plataforma web para la búsqueda de rutas de transporte en Arequipa. Su componente crítico, el algoritmo de búsqueda de rutas directas y combinadas, es especificado y validado formalmente mediante el lenguaje VDM++~\cite{fitzgerald2008}, utilizando invariantes, precondiciones y postcondiciones. La validación del modelo se realiza con la herramienta VDMTools~\cite{fitzgerald2008}. De forma complementaria, el ciclo de vida de una solicitud se modela como un sistema de transición de estados y se verifica con NuSMV~\cite{nusmv} mediante propiedades LTL.
+
+El artículo se organiza de la siguiente manera. La Sección~\ref{sec:trabajos_relacionados} revisa los trabajos relacionados con la especificación formal y la validación de sistemas de transporte. La Sección~\ref{sec:requerimientos} presenta los requerimientos funcionales. La Sección~\ref{sec:modelo} describe el modelo VDM++ del subsistema de rutas. La Sección~\ref{sec:nusmv} presenta el modelo de transición de estados y su verificación con NuSMV. La Sección~\ref{sec:pruebas} expone los casos de prueba ejecutados en la Toolbox. La Sección~\ref{sec:resultados} resume los resultados de la validación. La Sección~\ref{sec:discusion} discute el alcance de los resultados. La Sección~\ref{sec:conclusiones} presenta las conclusiones. La Sección~\ref{sec:limitaciones} describe las limitaciones y la Sección~\ref{sec:recomendaciones} las recomendaciones y trabajos futuros.
+
 \subsection{Definición del Problema}
 \label{sec:problema}
 
 En la ciudad de Arequipa, la información sobre las rutas del transporte público es dispersa, está desactualizada y no se encuentra disponible de forma clara para el ciudadano. Ante la necesidad de desplazarse entre dos puntos, el usuario desconoce qué línea de bus tomar, cuáles son sus paraderos y si es necesario realizar un transbordo. Esta falta de información confiable produce pérdida de tiempo, desplazamientos innecesarios y decisiones de movilidad incorrectas.
 
-La planificación de viajes en transporte público constituye una tarea computacionalmente \emph{crítica}: un resultado erróneo (una ruta que no pasa cerca del origen, un transbordo inviable o una dirección de recorrido incorrecta) induce al usuario a tomar una decisión equivocada, con el consiguiente costo en tiempo y seguridad. Por este motivo, la correctitud del algoritmo de búsqueda de rutas no puede garantizarse únicamente mediante pruebas de ejecución; se requiere una especificación formal que demuestre propiedades sobre el resultado producido, tal como se argumenta para los sistemas de implementación crítica~\cite{verhoef2005}.
-
-El presente trabajo propone una plataforma web para la búsqueda de rutas de transporte en Arequipa. Su componente crítica, el algoritmo de búsqueda de rutas directas y combinadas, es especificada y validada formalmente mediante el lenguaje VDM++~\cite{fitzgerald2008}, utilizando invariantes, precondiciones y postcondiciones. La validación del modelo se realiza con la herramienta VDMTools~\cite{fitzgerald2008}.
+La planificación de viajes en transporte público constituye una tarea computacionalmente \emph{crítica}: un resultado erróneo (una ruta que no pasa cerca del origen, un transbordo inviable o una dirección de recorrido incorrecta) induce al usuario a tomar una decisión equivocada, con el consiguiente costo en tiempo y seguridad. Por este motivo, la correctitud del algoritmo de búsqueda de rutas no puede garantizarse únicamente mediante pruebas de ejecución; se requiere una especificación formal que demuestre propiedades sobre el resultado producido, tal como se argumenta para servicios de transporte validados formalmente~\cite{iqbal2022taxi}.
 
 \subsection{Objetivos}
 \label{sec:objetivos}
 
 \subsubsection{Objetivo general}
 
-Desarrollar una propuesta de solución para la planificación de viajes en transporte público, cuya componente crítica, el algoritmo de búsqueda de rutas, sea especificada y validada formalmente con VDM++, garantizando su correctitud y escalabilidad.
+Desarrollar una propuesta de solución para la planificación de viajes en transporte público, cuyo componente crítico, el algoritmo de búsqueda de rutas, sea especificado y validado formalmente con VDM++, y cuyo ciclo de solicitud sea verificado con NuSMV.
 
 \subsubsection{Objetivos específicos}
 
 \begin{enumerate}
     \item Definir los tipos de datos e invariantes del dominio de rutas (recorridos, paraderos y radios de búsqueda).
     \item Especificar en VDM++ las operaciones de búsqueda de rutas directas y de rutas combinadas mediante pre y postcondiciones.
-    \item Establecer las propiedades que el algoritmo debe garantizar, tales como la distancia máxima de acceso a una ruta, la viabilidad de los transbordos y la longitud mínima de los segmentos.
+    \item Establecer las propiedades que el algoritmo debe garantizar, tales como la distancia máxima de acceso a una ruta y la viabilidad de los transbordos.
     \item Validar el modelo formal con la herramienta VDM++ Toolbox mediante obligaciones de prueba y casos de prueba.
+    \item Modelar y verificar con NuSMV el sistema de transición de estados del ciclo de la solicitud.
     \item Documentar los requerimientos funcionales y los trabajos relacionados que sustentan la propuesta.
 \end{enumerate}

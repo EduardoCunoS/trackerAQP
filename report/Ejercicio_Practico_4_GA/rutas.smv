@@ -1,0 +1,50 @@
+MODULE main
+VAR
+  estado            : {inicio, buscando, con_ruta, sin_ruta, solicitud_invalida};
+  solicitud         : {ninguna, valida, invalida};
+  rutas_encontradas : 0..10;
+  consultas         : 0..10;
+
+ASSIGN
+  init(estado)            := inicio;
+  init(solicitud)         := ninguna;
+  init(rutas_encontradas) := 0;
+  init(consultas)         := 0;
+
+  next(estado) := case
+    estado = inicio & solicitud = valida      : buscando;
+    estado = inicio & solicitud = invalida    : solicitud_invalida;
+    estado = buscando & rutas_encontradas > 0 : con_ruta;
+    estado = buscando & rutas_encontradas = 0 : sin_ruta;
+    estado = con_ruta                         : inicio;
+    estado = sin_ruta                         : inicio;
+    estado = solicitud_invalida               : inicio;
+    TRUE                                      : estado;
+  esac;
+
+  next(solicitud) := case
+    estado = inicio : {ninguna, valida, invalida};
+    TRUE            : solicitud;
+  esac;
+
+  next(rutas_encontradas) := case
+    estado = inicio & solicitud = valida : {0, 1, 2, 3};
+    TRUE                                 : rutas_encontradas;
+  esac;
+
+  next(consultas) := case
+    estado = inicio & solicitud = valida & consultas < 10 : consultas + 1;
+    TRUE                                                   : consultas;
+  esac;
+
+DEFINE
+  resultado := (estado = con_ruta | estado = sin_ruta);
+
+LTLSPEC G (estado = con_ruta -> rutas_encontradas > 0);
+LTLSPEC G (estado = sin_ruta -> rutas_encontradas = 0);
+LTLSPEC G (estado = buscando -> F resultado);
+LTLSPEC G (estado = inicio & solicitud = valida -> F resultado);
+LTLSPEC G (estado = con_ruta -> X estado = inicio);
+LTLSPEC G (estado = sin_ruta -> X estado = inicio);
+LTLSPEC G (estado = solicitud_invalida -> X estado = inicio);
+LTLSPEC G (resultado -> consultas > 0);

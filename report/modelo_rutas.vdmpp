@@ -1,6 +1,7 @@
 -- ============================================================
 -- Modelo VDM++ del subsistema de rutas
 -- Sistema de Planificacion de Viajes en Transporte Publico
+-- Distancias en metros (Haversine; libreria MATH)
 -- ============================================================
 
 class Sistema
@@ -28,22 +29,34 @@ recorridos : set of Recorrido := {};
 -- Mapa: ruta -> conjunto de sus recorridos (maximo 2: IDA y VUELTA)
 recorridosPorRuta : map RutaId to set of Recorrido := { |-> };
 
+values
+
+-- Radio medio terrestre en metros
+R_TIERRA : real = 6371000.0;
+
 functions
-
--- Distancia entre dos puntos (Manhattan; en la implementacion Haversine)
-public distancia : real * real * real * real -> real
-distancia(lat1, lng1, lat2, lng2) ==
-  abs(lat1 - lat2) + abs(lng1 - lng2);
-
--- Distancia entre dos puntos
-public distanciaPunto : Punto * Punto -> real
-distanciaPunto(p1, p2) ==
-  distancia(p1.#1, p1.#2, p2.#1, p2.#2);
 
 -- Menor de dos reales
 public min2 : real * real -> real
 min2(a, b) ==
   if a <= b then a else b;
+
+-- Distancia geodesica entre dos puntos (Haversine; resultado en metros)
+public distancia : real * real * real * real -> real
+distancia(lat1, lng1, lat2, lng2) ==
+  let rad = MATH`pi / 180.0,
+      dLat = (lat2 - lat1) * rad,
+      dLng = (lng2 - lng1) * rad,
+      a = MATH`sin(dLat / 2.0) * MATH`sin(dLat / 2.0) +
+          MATH`cos(lat1 * rad) * MATH`cos(lat2 * rad) *
+          MATH`sin(dLng / 2.0) * MATH`sin(dLng / 2.0),
+      aAcot = if a > 1.0 then 1.0 else a
+  in 2.0 * R_TIERRA * MATH`asin(MATH`sqrt(aAcot));
+
+-- Distancia entre dos puntos
+public distanciaPunto : Punto * Punto -> real
+distanciaPunto(p1, p2) ==
+  distancia(p1.#1, p1.#2, p2.#1, p2.#2);
 
 -- Distancia minima de un punto a un recorrido
 public cercaniaPunto : Punto * seq of Punto -> real

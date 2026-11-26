@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+<rect x="0" y="0" width="1200" height="760" fill="#0f172a"/>
+<rect x="28" y="28" width="1144" height="704" rx="18" fill="#111827" stroke="#334155" stroke-width="2"/>
+<circle cx="58" cy="58" r="7" fill="#ef4444"/><circle cx="82" cy="58" r="7" fill="#f59e0b"/><circle cx="106" cy="58" r="7" fill="#22c55e"/>
+<text x="132" y="64" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="18" fill="#94a3b8">NuSMV 2.7.1 — Verificación de rutas.smv</text>
+<text x="60" y="118" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="20" fill="#fbbf24">$ NuSMV rutas.smv</text>
+<line x1="60" y1="138" x2="1140" y2="138" stroke="#334155" stroke-width="1"/>
+<text x="60" y="176" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = con_ruta -&gt; rutas_encontradas &gt; 0)</text>
+<text x="930" y="176" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="210" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = sin_ruta -&gt; rutas_encontradas = 0)</text>
+<text x="930" y="210" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="244" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = buscando -&gt; F resultado)</text>
+<text x="930" y="244" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="278" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G ((estado = inicio &amp; solicitud = valida) -&gt; F resultado)</text>
+<text x="930" y="278" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="312" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = con_ruta -&gt; X estado = inicio)</text>
+<text x="930" y="312" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="346" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = sin_ruta -&gt; X estado = inicio)</text>
+<text x="930" y="346" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="380" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (estado = solicitud_invalida -&gt; X estado = inicio)</text>
+<text x="930" y="380" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<text x="60" y="414" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#e5e7eb">-- specification  G (resultado -&gt; consultas &gt; 0)</text>
+<text x="930" y="414" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="17" fill="#4ade80">is true</text>
+<line x1="60" y1="470" x2="1140" y2="470" stroke="#334155" stroke-width="1"/>
+<text x="60" y="508" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#4ade80">✓ 8 propiedades verificadas — 0 fallos</text>
+<text x="60" y="542" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#94a3b8">Modelo: rutas.smv · Herramienta: NuSMV 2.7.1 · Propiedades LTL con G y F</text>
+<text x="60" y="590" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#64748b">La verificación es sobre el modelo abstracto del ciclo de la solicitud; no sobre el código Django/React.</text>
+</svg>

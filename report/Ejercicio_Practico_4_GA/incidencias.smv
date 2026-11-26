@@ -1,0 +1,47 @@
+MODULE main
+VAR
+  estado     : {activo, en_proceso, resuelto, falso};
+  reportes   : 0..5;
+  dias       : 0..30;
+  notificado : boolean;
+
+ASSIGN
+  init(estado)     := activo;
+  init(reportes)   := 0;
+  init(dias)       := 0;
+  init(notificado) := FALSE;
+
+  next(estado) := case
+    estado = activo & reportes >= 2            : en_proceso;
+    estado = activo & dias >= 7 & reportes < 2 : falso;
+    estado = en_proceso & dias >= 14           : resuelto;
+    TRUE                                       : estado;
+  esac;
+
+  next(reportes) := case
+    estado = activo & reportes < 5 & dias < 7 : {reportes, reportes + 1};
+    TRUE                                      : reportes;
+  esac;
+
+  next(dias) := case
+    (estado = activo | estado = en_proceso) & dias < 30 : dias + 1;
+    TRUE                                                : dias;
+  esac;
+
+  next(notificado) := case
+    !notificado & estado = activo & reportes >= 2            : TRUE;
+    !notificado & estado = activo & dias >= 7 & reportes < 2 : TRUE;
+    !notificado & estado = en_proceso & dias >= 14           : TRUE;
+    TRUE                                                     : notificado;
+  esac;
+
+DEFINE
+  terminal := (estado = resuelto | estado = falso);
+
+LTLSPEC G (estado = resuelto -> X estado = resuelto);
+LTLSPEC G (estado = falso -> X estado = falso);
+LTLSPEC G (estado != activo -> notificado);
+LTLSPEC G (estado = en_proceso -> reportes >= 2);
+LTLSPEC G (estado = falso -> reportes < 2);
+LTLSPEC G ((estado = activo & reportes >= 2) -> F estado = en_proceso);
+LTLSPEC F terminal;

@@ -1,16 +1,24 @@
 \section{Conclusiones}
 \label{sec:conclusiones}
 
-Se especificó y validó formalmente, mediante VDM++, el componente
-crítico de una plataforma de planificación de viajes en transporte
-público para Arequipa. El modelo define los tipos del dominio, las
-operaciones de búsqueda de rutas directas y combinadas, y sus
-postcondiciones, que formalizan las garantías del algoritmo.
+Se especificó y validó el algoritmo de búsqueda de rutas de una
+plataforma de planificación de viajes en transporte público para
+Arequipa, y se verificó el ciclo de vida de una solicitud mediante un
+modelo de transición de estados. El modelo VDM++ define los tipos del
+dominio, las operaciones de búsqueda de rutas directas y combinadas, y
+sus postcondiciones, que formalizan las garantías del algoritmo. El
+modelo NuSMV define los estados, variables, guardas y asignaciones del
+ciclo de la solicitud, y sus propiedades LTL formalizan la alcanzabilidad
+de un resultado y la coherencia del estado.
 
 La validación en la VDM++ Toolbox permitió comprobar que el modelo es
 sintáctica y semánticamente consistente, que las operaciones se ejecutan
 correctamente sobre casos de prueba representativos y que las
-postcondiciones se satisfacen. De este modo, se evidenció que aplicar
+postcondiciones se satisfacen. La verificación en NuSMV 2.7.1 permitió
+comprobar que las ocho propiedades LTL del modelo de estados son
+\texttt{true}, y que la propiedad que exige que toda solicitud encuentre
+una ruta es \texttt{false}, con un contraejemplo que mantiene la
+solicitud en \texttt{ninguna}. De este modo, se evidenció que aplicar
 métodos formales a un algoritmo de movilidad permite especificar con
 precisión su comportamiento y detectar ambigüedades que las pruebas
 informales no revelan.

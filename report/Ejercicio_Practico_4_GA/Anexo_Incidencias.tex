@@ -1,0 +1,326 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\title{\textbf{Anexo}\\[2mm]
+\large Sistema de Transición de Estados para Incidencias del Foro}
+\author{Proyecto: Sistema de Planificación de Viajes en Transporte Público (aqpTracker)}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Objetivo}
+
+Modelar como sistema de transición de estados el ciclo de vida de una incidencia urbana del foro del proyecto, identificando estados, variables, condiciones de transición y actualizaciones de valores, y verificando un requerimiento mediante los operadores temporales \texttt{G} y \texttt{F} de NuSMV.
+
+\section{¿Qué es un sistema de transición de estados?}
+
+Un sistema de transición de estados (STS, por sus siglas en inglés) es una estructura formal:
+\[
+M = (S, S_0, \rightarrow, AP, L)
+\]
+donde \(S\) es un conjunto finito de estados, \(S_0 \subseteq S\) son los estados iniciales, \(\rightarrow \subseteq S \times S\) es la relación de transición, \(AP\) es un conjunto de proposiciones atómicas y \(L : S \rightarrow 2^{AP}\) indica qué proposiciones son verdaderas en cada estado.
+
+En NuSMV el sistema se describe con variables de dominio finito, asignaciones iniciales (\texttt{init}) y asignaciones de siguiente estado (\texttt{next}). Las propiedades se escriben en LTL:
+\begin{itemize}
+  \item \texttt{G} \(\varphi\) (``globalmente \(\varphi\)''): \(\varphi\) se cumple en todos los estados de todos los caminos. Se usa para propiedades de seguridad o invariantes.
+  \item \texttt{F} \(\varphi\) (``eventualmente \(\varphi\)''): \(\varphi\) se cumple en algún estado futuro de todos los caminos. Se usa para propiedades de vivacidad o alcanzabilidad.
+\end{itemize}
+
+\section{Descripción del modelo}
+
+Se modela el ciclo de vida de una incidencia del foro. Una incidencia se publica en estado \texttt{activo}. Si la comunidad la respalda con al menos dos reportes, pasa a \texttt{en\_proceso}; si es atendida, pasa a \texttt{resuelto} al cumplirse 14 días. Si no recibe al menos dos reportes en 7 días, se descarta como \texttt{falso}. Los estados \texttt{resuelto} y \texttt{falso} son terminales.
+
+Las variables \texttt{reportes}, \texttt{dias} y \texttt{notificado} registran el respaldo ciudadano, el tiempo transcurrido y la notificación al autor. La actualización no determinista de \texttt{reportes} representa la incertidumbre sobre cuántos ciudadanos confirmarán la incidencia en cada día. El modelo es una abstracción de las reglas de negocio del foro: no representa el texto ni las imágenes de la incidencia, sino las condiciones que determinan su estado.
+
+Se eligió este componente porque el proyecto ya define los estados \texttt{Activo}, \texttt{En proceso}, \texttt{Resuelto} y \texttt{Falso} para las incidencias, y porque permite ilustrar de forma clara las variables, las guardas y las actualizaciones de valores solicitadas en el ejercicio.
+
+\section{Estados, variables y estado inicial}
+
+\subsection{Estados}
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Estado} & \textbf{Significado} \\
+\hline
+\texttt{activo} & Incidencia publicada, pendiente de validación \\
+\hline
+\texttt{en\_proceso} & Incidencia validada por la comunidad y en atención \\
+\hline
+\texttt{resuelto} & Incidencia atendida y cerrada \\
+\hline
+\texttt{falso} & Incidencia descartada por falta de respaldo \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Variables}
+
+\begin{center}
+\begin{tabular}{|l|p{5.2cm}|p{6.8cm}|}
+\hline
+\textbf{Variable} & \textbf{Dominio} & \textbf{Descripción} \\
+\hline
+\texttt{estado} & \texttt{\{activo, en\_proceso, resuelto, falso\}} & Estado actual de la incidencia \\
+\hline
+\texttt{reportes} & \texttt{0..5} & Número de confirmaciones ciudadanas \\
+\hline
+\texttt{dias} & \texttt{0..30} & Días transcurridos desde la publicación \\
+\hline
+\texttt{notificado} & \texttt{boolean} & Indica si el autor ya fue notificado \\
+\hline
+\end{tabular}
+\end{center}
+
+Estado inicial: \texttt{estado = activo}, \texttt{reportes = 0}, \texttt{dias = 0}, \texttt{notificado = FALSE}.
+
+\subsection{Diagrama de estados}
+
+\begin{center}
+\begin{tikzpicture}[->,>=stealth,shorten >=1pt,auto,node distance=3.2cm,semithick]
+  \node[state,initial] (activo) {\texttt{activo}};
+  \node[state] (enproceso) [right=of activo] {\texttt{en\_proceso}};
+  \node[state] (resuelto) [right=of enproceso] {\texttt{resuelto}};
+  \node[state] (falso) [below=of enproceso] {\texttt{falso}};
+  \path
+    (activo) edge[bend left=15] node{\texttt{reportes} $\ge$ 2} (enproceso)
+    (activo) edge node[below]{\texttt{dias} $\ge$ 7 y \texttt{reportes} $<$ 2} (falso)
+    (enproceso) edge node{\texttt{dias} $\ge$ 14} (resuelto)
+    (resuelto) edge[loop right] (resuelto)
+    (falso) edge[loop below] (falso);
+\end{tikzpicture}
+\end{center}
+
+\section{Condiciones de transición y actualizaciones}
+
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Estado actual} & \textbf{Condición} & \textbf{Estado siguiente} & \textbf{Actualización} \\
+\hline
+\texttt{activo} & \texttt{reportes} $\ge$ 2 & \texttt{en\_proceso} & \texttt{notificado := TRUE} \\
+\hline
+\texttt{activo} & \texttt{dias} $\ge$ 7 \& \texttt{reportes} $<$ 2 & \texttt{falso} & \texttt{notificado := TRUE} \\
+\hline
+\texttt{en\_proceso} & \texttt{dias} $\ge$ 14 & \texttt{resuelto} & \texttt{notificado := TRUE} \\
+\hline
+\texttt{resuelto} o \texttt{falso} & --- & mismo estado & sin cambios \\
+\hline
+\end{tabular}
+\end{center}
+
+Actualizaciones de las variables en cada transición:
+
+\begin{center}
+\begin{tabular}{|l|p{11cm}|}
+\hline
+\textbf{Variable} & \textbf{Actualización} \\
+\hline
+\texttt{reportes} & Si \texttt{estado = activo} y \texttt{reportes < 5} y \texttt{dias < 7}, entonces \texttt{reportes} o \texttt{reportes + 1}; en otro caso, permanece. \\
+\hline
+\texttt{dias} & Si \texttt{estado} es \texttt{activo} o \texttt{en\_proceso} y \texttt{dias < 30}, entonces \texttt{dias + 1}; en otro caso, permanece. \\
+\hline
+\texttt{notificado} & Pasa a \texttt{TRUE} al salir de \texttt{activo} o al pasar de \texttt{en\_proceso} a \texttt{resuelto}; en otro caso, permanece. \\
+\hline
+\end{tabular}
+\end{center}
+
+La condición \texttt{dias < 7} en la actualización de \texttt{reportes} evita que una incidencia que será descartada incremente su contador en el mismo paso, lo que preserva la invariante \texttt{estado = falso -> reportes < 2}.
+
+\section{Código NuSMV}
+
+El código completo del modelo se presenta en la Figura~\ref{fig:codigo-nusmv}.
+
+\begin{figure}[H]
+\centering
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+MODULE main
+VAR
+  estado     : {activo, en_proceso, resuelto, falso};
+  reportes   : 0..5;
+  dias       : 0..30;
+  notificado : boolean;
+
+ASSIGN
+  init(estado)     := activo;
+  init(reportes)   := 0;
+  init(dias)       := 0;
+  init(notificado) := FALSE;
+
+  next(estado) := case
+    estado = activo & reportes >= 2            : en_proceso;
+    estado = activo & dias >= 7 & reportes < 2 : falso;
+    estado = en_proceso & dias >= 14           : resuelto;
+    TRUE                                       : estado;
+  esac;
+
+  next(reportes) := case
+    estado = activo & reportes < 5 & dias < 7 : {reportes, reportes + 1};
+    TRUE                                      : reportes;
+  esac;
+
+  next(dias) := case
+    (estado = activo | estado = en_proceso) & dias < 30 : dias + 1;
+    TRUE                                                : dias;
+  esac;
+
+  next(notificado) := case
+    !notificado & estado = activo & reportes >= 2            : TRUE;
+    !notificado & estado = activo & dias >= 7 & reportes < 2 : TRUE;
+    !notificado & estado = en_proceso & dias >= 14           : TRUE;
+    TRUE                                                     : notificado;
+  esac;
+
+DEFINE
+  terminal := (estado = resuelto | estado = falso);
+
+LTLSPEC G (estado = resuelto -> X estado = resuelto);
+LTLSPEC G (estado = falso -> X estado = falso);
+LTLSPEC G (estado != activo -> notificado);
+LTLSPEC G (estado = en_proceso -> reportes >= 2);
+LTLSPEC G (estado = falso -> reportes < 2);
+LTLSPEC G ((estado = activo & reportes >= 2) -> F estado = en_proceso);
+LTLSPEC F terminal;
+\end{lstlisting}
+\caption{Código NuSMV del sistema de transición de estados de una incidencia.}
+\label{fig:codigo-nusmv}
+\end{figure}
+
+La definición \texttt{terminal} es un alias que abrevia la condición \texttt{estado = resuelto | estado = falso}; se usa para simplificar la lectura de la propiedad R3.
+
+\section{Requerimiento verificado con G y F}
+
+\subsection{Requerimiento principal}
+
+\textbf{R2:} ``Toda incidencia activa que recibe al menos dos reportes eventualmente pasa a \texttt{en\_proceso}.''
+
+Fórmula LTL:
+
+\begin{lstlisting}
+LTLSPEC G ((estado = activo & reportes >= 2) -> F estado = en_proceso);
+\end{lstlisting}
+
+La fórmula combina \texttt{G} y \texttt{F}: \texttt{G} exige que la implicación se cumpla en todos los estados alcanzables, y \texttt{F} exige que, cuando la condición se cumple, exista un estado futuro en el que la incidencia esté en \texttt{en\_proceso}. La propiedad se cumple porque \texttt{reportes} nunca disminuye y, cuando vale al menos 2, la primera regla de transición conduce a \texttt{en\_proceso} en el siguiente paso. Además, la condición antecedente es alcanzable en alguna ejecución (\texttt{SPEC EF (estado = activo \& reportes >= 2)} devuelve \texttt{true}), por lo que la propiedad no es vacua.
+
+\subsection{Requerimientos complementarios}
+
+\begin{center}
+\begin{tabular}{|l|p{5.2cm}|p{5.2cm}|l|}
+\hline
+\textbf{ID} & \textbf{Requerimiento} & \textbf{Fórmula LTL} & \textbf{Tipo} \\
+\hline
+R1 & Toda incidencia que no está activa ya fue notificada & \texttt{G (estado != activo -> notificado)} & Seguridad \\
+\hline
+R3 & Toda incidencia alcanza un estado terminal & \texttt{F terminal} & Vivacidad \\
+\hline
+R4 & Una incidencia resuelta no vuelve a otro estado & \texttt{G (estado = resuelto -> X estado = resuelto)} & Seguridad \\
+\hline
+R5 & Una incidencia falsa no vuelve a otro estado & \texttt{G (estado = falso -> X estado = falso)} & Seguridad \\
+\hline
+R6 & Una incidencia en proceso tiene al menos dos reportes & \texttt{G (estado = en\_proceso -> reportes >= 2)} & Seguridad \\
+\hline
+R7 & Una incidencia falsa tiene menos de dos reportes & \texttt{G (estado = falso -> reportes < 2)} & Seguridad \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Ejecución y resultados}
+
+Ejecutar:
+
+\begin{lstlisting}
+NuSMV incidencias.smv
+\end{lstlisting}
+
+Salida esperada:
+
+\begin{lstlisting}
+-- specification  G (estado = resuelto ->  X estado = resuelto)  is true
+-- specification  G (estado = falso ->  X estado = falso)  is true
+-- specification  G (estado = en_proceso -> reportes >= 2)  is true
+-- specification  G (estado = falso -> reportes < 2)  is true
+-- specification  G ((estado = activo & reportes >= 2) ->  F estado = en_proceso)  is true
+-- specification  F terminal  is true
+-- specification  G (estado != activo -> notificado)  is true
+\end{lstlisting}
+
+Todas las propiedades se verifican. Esto significa que, para todas las ejecuciones posibles del modelo, se cumplen las invariantes y las propiedades de vivacidad indicadas.
+
+\subsection{Prueba adicional: una propiedad que no se cumple}
+
+Si se agrega la fórmula:
+
+\begin{lstlisting}
+LTLSPEC G (estado = activo -> F estado = resuelto);
+\end{lstlisting}
+
+NuSMV responde \texttt{is false} y devuelve un contraejemplo: una ejecución en la que \texttt{reportes} permanece en 0 y, al llegar a \texttt{dias = 7}, la incidencia pasa a \texttt{falso}. En esa ejecución nunca se alcanza \texttt{resuelto}. Esto no es un error del modelo: refleja que no toda incidencia publicada es necesariamente resuelta; las que no reciben respaldo se descartan. El requerimiento correcto es R3 (alcanzar un estado terminal), no ``toda incidencia se resuelve''.
+
+Traza resumida del contraejemplo:
+
+\begin{lstlisting}
+Estado 1.1: estado = activo,    reportes = 0, dias = 0, notificado = FALSE
+...
+Estado 1.8: estado = activo,    reportes = 0, dias = 7
+Estado 1.9: estado = falso,     reportes = 0, dias = 8, notificado = TRUE
+\end{lstlisting}
+
+\section{Relación con el proyecto}
+
+\begin{center}
+\begin{tabular}{|p{5.5cm}|p{9cm}|}
+\hline
+\textbf{Elemento NuSMV} & \textbf{Elemento del proyecto} \\
+\hline
+\texttt{activo}, \texttt{en\_proceso}, \texttt{resuelto}, \texttt{falso} & Registros del modelo \texttt{Estado} del foro \\
+\hline
+\texttt{reportes} & Confirmaciones registradas en \texttt{Reporte} \\
+\hline
+\texttt{dias} & Diferencia entre \texttt{fecha\_creacion} y la fecha actual \\
+\hline
+\texttt{notificado} & Notificación al autor (\texttt{Notificacion}) \\
+\hline
+\end{tabular}
+\end{center}
+
+La implementación en Django/React puede reflejar este modelo con una máquina de estados en el servicio de incidencias: las guardas de NuSMV se traducen en validaciones antes de cambiar \texttt{Incidencia.estado}, y las actualizaciones en el incremento de contadores y la creación de notificaciones. El modelo formal sirve como especificación previa y como base para pruebas de transición.
+
+El mismo patrón puede aplicarse al subsistema de búsqueda de rutas, con estados \texttt{esperando}, \texttt{buscando}, \texttt{con\_ruta} y \texttt{sin\_ruta}, y una variable \texttt{rutas\_encontradas}. En ese caso, una propiedad de seguridad útil sería \texttt{G (estado = con\_ruta -> rutas\_encontradas > 0)}, que garantiza que no se muestre una ruta cuando la búsqueda no produjo resultados.
+
+\section{Conclusión}
+
+Se definió un sistema de transición de estados con cuatro estados, cuatro variables, condiciones de transición y actualizaciones de valores. El modelo se codificó en NuSMV y se verificaron propiedades de seguridad y vivacidad con \texttt{G} y \texttt{F}. La propiedad principal garantiza que una incidencia con suficiente respaldo ciudadano eventualmente pasa a \texttt{en\_proceso}; las propiedades complementarias garantizan la terminalidad de los estados finales y la notificación al autor. El contraejemplo de la propiedad ``toda incidencia se resuelve'' muestra que el modelo distingue correctamente entre incidencias resueltas y descartadas.
+
+\section{Cómo ejecutar}
+
+\begin{enumerate}
+  \item Descargar NuSMV desde \url{https://nusmv.fbk.eu/downloads.html}.
+  \item Guardar el código en \texttt{incidencias.smv}.
+  \item Ejecutar \texttt{NuSMV incidencias.smv}.
+  \item Opcionalmente, abrir la consola interactiva con \texttt{NuSMV -int incidencias.smv} y ejecutar \texttt{check\_ltlspec}.
+\end{enumerate}
+
+\end{document}

@@ -7,12 +7,12 @@ organiza en tipos, variables de instancia, funciones auxiliares y
 operaciones con pre y postcondiciones, y cubre los elementos del lenguaje
 requeridos: tipos \emph{quote}, \emph{token}, registros con invariantes,
 secuencias, conjuntos y mapas. La Figura~\ref{fig:modelo} muestra el
-modelo cargado en la VDM++ Toolbox.
+análisis de sintaxis y tipos del modelo en VDMTools 9.0.7.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{images/Modelo_abierto_en_la_Toolbox.png}
-\caption{Modelo VDM++ del subsistema de rutas cargado en la VDM++ Toolbox.}
+\includegraphics[width=\columnwidth]{images/Type_Check_Haversine.png}
+\caption{Análisis de sintaxis y tipos del modelo en VDMTools 9.0.7.}
 \label{fig:modelo}
 \end{figure}
 
@@ -21,8 +21,10 @@ modelo cargado en la VDM++ Toolbox.
 
 La especificación define un tipo \emph{quote} para el sentido del
 recorrido, dos tipos \emph{token} para los identificadores opacos, y dos
-tipos registro con sus invariantes:
+tipos registro con sus invariantes (Figura~\ref{fig:codigo-tipos}):
 
+\begin{figure}[!t]
+\centering
 \begin{lstlisting}
 class Sistema
 types
@@ -44,6 +46,9 @@ instance variables
   recorridos : set of Recorrido := {};
   paraderos  : set of ParaderoId := {};
 \end{lstlisting}
+\caption{Tipos e invariantes del modelo VDM++.}
+\label{fig:codigo-tipos}
+\end{figure}
 
 Los tipos \emph{quote} representan valores simbólicos de un dominio
 cerrado (ida o vuelta). Los tipos \emph{token} representan identificadores
@@ -63,8 +68,10 @@ de los puntos define el trayecto y un punto puede repetirse en una parada.
 Los \textbf{conjuntos} (\texttt{set of Recorrido}, \texttt{set of
 ParaderoId}) se emplean para los catálogos, donde el orden no importa y no
 debe haber duplicados. Adicionalmente, se propone un \textbf{mapa} para
-relacionar cada ruta con sus recorridos:
+relacionar cada ruta con sus recorridos (Figura~\ref{fig:codigo-mapa}):
 
+\begin{figure}[!t]
+\centering
 \begin{lstlisting}
 recorridosPorRuta : map RutaId to set of Recorrido
 inv recorridosPorRuta ==
@@ -74,6 +81,9 @@ inv recorridosPorRuta ==
   (forall r in set dom recorridosPorRuta &
      forall rec in set recorridosPorRuta(r) & rec.ruta = r);
 \end{lstlisting}
+\caption{Invariante del mapa de recorridos por ruta.}
+\label{fig:codigo-mapa}
+\end{figure}
 
 La invariante del mapa expresa que cada ruta tiene a lo sumo dos
 recorridos (ida y vuelta) y que cada recorrido del mapa referencia a la
@@ -85,8 +95,10 @@ ruta que lo contiene.
 Por limitaciones de la versión de la Toolbox empleada (VDMTools 9.0.7),
 la implementación ejecutable representa los tipos registro como tipos
 producto y los identificadores \emph{token} como naturales, preservando la
-semántica y las invariantes del modelo:
+semántica y las invariantes del modelo (Figura~\ref{fig:codigo-tuplas}):
 
+\begin{figure}[!t]
+\centering
 \begin{lstlisting}
 types
   public Sentido   = <IDA> | <VUELTA>;
@@ -97,6 +109,37 @@ types
   public Recorrido = RutaId * Sentido * seq of Punto
     inv r == len r.#3 >= 2;
 \end{lstlisting}
+\caption{Representación ejecutable de los tipos registro y token.}
+\label{fig:codigo-tuplas}
+\end{figure}
+
+\subsection{Función de distancia}
+\label{sec:distancia}
+
+La distancia entre dos coordenadas se calcula con la fórmula de Haversine y se expresa en metros. La implementación usa la librería \texttt{MATH} de la Toolbox para las funciones trigonométricas y la raíz cuadrada, y define el radio medio terrestre como una constante del modelo (Figura~\ref{fig:codigo-haversine}):
+
+\begin{figure}[!t]
+\centering
+\begin{lstlisting}
+values
+  R_TIERRA : real = 6371000.0;
+
+public distancia : real * real * real * real -> real
+distancia(lat1, lng1, lat2, lng2) ==
+  let rad = MATH`pi / 180.0,
+      dLat = (lat2 - lat1) * rad,
+      dLng = (lng2 - lng1) * rad,
+      a = MATH`sin(dLat / 2.0) * MATH`sin(dLat / 2.0) +
+          MATH`cos(lat1 * rad) * MATH`cos(lat2 * rad) *
+          MATH`sin(dLng / 2.0) * MATH`sin(dLng / 2.0),
+      aAcot = if a > 1.0 then 1.0 else a
+  in 2.0 * R_TIERRA * MATH`asin(MATH`sqrt(aAcot));
+\end{lstlisting}
+\caption{Función de distancia Haversine en VDM++.}
+\label{fig:codigo-haversine}
+\end{figure}
+
+La fórmula convierte las coordenadas de grados a radianes, calcula el término \(a\) de Haversine y obtiene la distancia con \(2R\arcsin(\sqrt{a})\). El valor \(a\) se acota a \(1.0\) para evitar errores de redondeo en \texttt{asin}. La librería \texttt{MATH} de VDMTools 9.0.7 no expone \texttt{atan2}, por lo que se emplea la forma equivalente con \texttt{asin}; la implementación del backend usa \texttt{atan2} y ambas expresiones son algebraicamente equivalentes. Los parámetros \texttt{radio} y \texttt{radioTransbordo} de las operaciones de búsqueda se expresan en metros.
 
 \subsection{Operaciones y postcondiciones}
 \label{sec:operaciones}
@@ -106,8 +149,11 @@ definen las operaciones de búsqueda. \texttt{buscarRutasDirectas} (RF1)
 devuelve los recorridos que pasan a una distancia menor o igual a
 \texttt{radio} del origen \texttt{A} y del destino \texttt{B} (en la
 implementación con tuplas, el campo \texttt{coordenadas} se accede como
-\texttt{rec.\#3}):
+\texttt{rec.\#3}); la especificación se muestra en la
+Figura~\ref{fig:codigo-directas}:
 
+\begin{figure}[!t]
+\centering
 \begin{lstlisting}
 public buscarRutasDirectas : Punto * Punto * real ==> set of Recorrido
 buscarRutasDirectas(A, B, radio) ==
@@ -119,6 +165,9 @@ post forall rec in set RESULT &
        cercaniaPunto(A, rec.#3) <= radio and
        cercaniaPunto(B, rec.#3) <= radio;
 \end{lstlisting}
+\caption{Especificación de la operación \texttt{buscarRutasDirectas}.}
+\label{fig:codigo-directas}
+\end{figure}
 
 La postcondición formaliza la propiedad central: toda ruta devuelta se
 encuentra a una distancia menor o igual al radio respecto del origen y
@@ -158,8 +207,11 @@ distancia.
 \end{figure}
 
 El diagrama también se documenta en formato PlantUML, lo que permite
-regenerarlo o exportarlo a otros formatos:
+regenerarlo o exportarlo a otros formatos
+(Figura~\ref{fig:codigo-plantuml}):
 
+\begin{figure}[!t]
+\centering
 \begin{lstlisting}
 @startuml
 class Empresa { nombre; descripcion }
@@ -173,13 +225,8 @@ Recorrido "1" --> "*" RecorridoParadero
 Paradero "1" --> "*" RecorridoParadero
 @enduml
 \end{lstlisting}
-
-La Figura~\ref{fig:typecheck} muestra que el análisis de tipos del modelo
-finaliza sin errores.
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=\columnwidth]{images/Type_Check_sin_errores.png}
-\caption{Análisis de tipos (\emph{type check}) del modelo sin errores.}
-\label{fig:typecheck}
+\caption{Fuente PlantUML del diagrama de clases.}
+\label{fig:codigo-plantuml}
 \end{figure}
+
+El análisis de tipos del modelo finaliza sin errores; la Figura~\ref{fig:modelo} resume la carga de \texttt{MATH}, el análisis del modelo y la inicialización de la especificación.

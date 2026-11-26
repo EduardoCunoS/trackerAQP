@@ -1,10 +1,19 @@
 -- ============================================================
 -- Comandos para el interprete de VDM++ Toolbox 9.0.7
+-- Distancias y radios en metros (Haversine, R = 6371000 m)
+-- Antes del type check, cargar math.vpp (stdlib; copia en report/math.vpp)
 -- ============================================================
 
 -- Datos de prueba:
 --   Origen A  = mk_(-16.3989, -71.5370)  (Plaza de Armas)
 --   Destino B = mk_(-16.4298, -71.5192)  (Terminal Terrestre)
+
+-- 0) Cargar MATH, el modelo y analizar tipos (desde report/)
+read math.vpp
+typecheck MATH def
+read modelo_rutas.vdmpp
+typecheck Sistema def
+init
 
 -- ============================================================
 -- CAPTURA 3: casos de prueba
@@ -16,21 +25,26 @@ create s := new Sistema()
 -- 2) Agregar un recorrido
 print s.agregarRecorrido(mk_(1, <IDA>, [mk_(-16.3989, -71.5370), mk_(-16.4150, -71.5280), mk_(-16.4298, -71.5192)]))
 
--- 3) Caso POSITIVO (radio 0.05 -> devuelve el recorrido)
-print s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05)
+-- 3) Distancia Haversine entre A y B (aprox. 3925.59 m)
+print s.distancia(-16.3989, -71.5370, -16.4298, -71.5192)
 
--- 4) Caso NEGATIVO (origen lejano -> devuelve {})
-print s.buscarRutasDirectas(mk_(-15.0, -72.0), mk_(-16.4298, -71.5192), 0.05)
+-- 4) Caso POSITIVO (radio 1000 m -> devuelve el recorrido)
+print s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 1000.0)
+
+-- 5) Caso NEGATIVO (origen lejano -> devuelve {})
+print s.buscarRutasDirectas(mk_(-15.0, -72.0), mk_(-16.4298, -71.5192), 1000.0)
 
 -- Rutas combinadas (objeto nuevo con dos recorridos que se cruzan)
 create c := new Sistema()
 print c.agregarRecorrido(mk_(1, <IDA>, [mk_(-16.3989, -71.5370), mk_(-16.4100, -71.5300)]))
 print c.agregarRecorrido(mk_(2, <IDA>, [mk_(-16.4100, -71.5300), mk_(-16.4298, -71.5192)]))
-print c.buscarRutasCombinadas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05, 0.001)
+print c.buscarRutasCombinadas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 1000.0, 100.0)
 
 -- ============================================================
 -- CAPTURA 5: validacion de la postcondicion (debe dar true)
 -- Nota: cercaniaPunto se llama por el objeto (s.cercaniaPunto)
 -- ============================================================
 
-print forall rec in set s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 0.05) & s.cercaniaPunto(mk_(-16.3989, -71.5370), rec.#3) <= 0.05 and s.cercaniaPunto(mk_(-16.4298, -71.5192), rec.#3) <= 0.05
+print forall rec in set s.buscarRutasDirectas(mk_(-16.3989, -71.5370), mk_(-16.4298, -71.5192), 1000.0) & s.cercaniaPunto(mk_(-16.3989, -71.5370), rec.#3) <= 1000.0 and s.cercaniaPunto(mk_(-16.4298, -71.5192), rec.#3) <= 1000.0
+
+-- Salida de referencia de esta ejecucion: report/salida_vdmpp_haversine.txt

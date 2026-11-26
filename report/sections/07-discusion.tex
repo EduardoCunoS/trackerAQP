@@ -16,8 +16,19 @@ representativos, pero no prueban la postcondición para todas las
 entradas posibles. Las obligaciones de prueba generadas por la Toolbox
 constituyen el punto de partida para una verificación más rigurosa.
 
+La verificación con NuSMV complementa este análisis. El modelo de
+estados no describe el algoritmo, pero permite comprobar propiedades de
+seguridad y alcanzabilidad del ciclo de la solicitud. Las ocho
+propiedades LTL verificadas devuelven \texttt{true}; la propiedad
+\texttt{G (estado = inicio -> F estado = con\_ruta)} devuelve
+\texttt{false}, lo que confirma que el modelo distingue una búsqueda sin
+resultados de una búsqueda que no se inició. La verificación se aplica
+al modelo abstracto, no al backend ni a la interfaz.
+
 Desde el punto de vista del modelado, la herramienta impuso algunas
 restricciones prácticas. En particular, los tipos registro se
-representaron como tipos producto (tuplas) y la distancia se modeló de
-forma simplificada; ambos aspectos se detallan en la
-Sección~\ref{sec:limitaciones}.
+representaron como tipos producto (tuplas). Además, la función de
+distancia usa la forma de Haversine con \texttt{asin}, porque la librería
+\texttt{MATH} de la versión 9.0.7 no expone \texttt{atan2}; esta forma es
+equivalente a la implementación del backend con \texttt{atan2}. Ambos
+aspectos se detallan en la Sección~\ref{sec:limitaciones}.

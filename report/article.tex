@@ -12,6 +12,7 @@
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
+  frame=single,
   breaklines=true,
   columns=fullflexible,
   keepspaces=true,
@@ -20,7 +21,7 @@
 
 \begin{document}
 
-\title{Sistema de Planificación de Viajes en Transporte Público con Validación Formal en VDM++ para la Ciudad de Arequipa}
+\title{Sistema de Planificación de Viajes en Transporte Público con Especificación en VDM++ y Verificación de Estados en NuSMV para la Ciudad de Arequipa}
 
 \author{
 \IEEEauthorblockN{Alvarez Choque Miguel Angel, Cuno Salazar Eduardo Joel, Cruz Gallegos Jeremy Jeison,\\Inca Moncca Jherson David, Quispe Madariaga Jeferson Jofre}
@@ -30,23 +31,25 @@
 \maketitle
 
 \begin{abstract}
-La información sobre las rutas de transporte público en Arequipa es dispersa e imprecisa, lo que provoca desplazamientos ineficientes y decisiones de movilidad erróneas. Este trabajo propone una plataforma web para la búsqueda de rutas directas y combinadas, cuya componente crítica, el algoritmo de planificación de viajes, es especificada y validada formalmente con el lenguaje VDM++. Se definen los tipos de datos e invariantes del dominio de rutas y se especifican las operaciones de búsqueda mediante pre y postcondiciones que garantizan propiedades como la distancia máxima de acceso a las rutas y la viabilidad de los transbordos. La propuesta se valida mediante la herramienta VDM++ Toolbox, abordando así tanto la correctitud del algoritmo como la escalabilidad de la solución.
+La información sobre las rutas de transporte público en Arequipa es dispersa e imprecisa, lo que provoca desplazamientos ineficientes y decisiones de movilidad erróneas. Este trabajo propone una plataforma web para la búsqueda de rutas directas y combinadas. El algoritmo de planificación de viajes se especifica y valida formalmente con VDM++ y la VDM++ Toolbox mediante tipos, invariantes, precondiciones y postcondiciones. De forma complementaria, el ciclo de vida de una solicitud se modela como un sistema de transición de estados y se verifica con NuSMV mediante propiedades LTL. La validación del algoritmo se apoya en casos de prueba y obligaciones de prueba, mientras que la verificación del modelo de estados comprueba propiedades de seguridad, alcanzabilidad y retorno al estado inicial. Los resultados muestran que ambos modelos son complementarios y que ninguno sustituye la validación del código de la plataforma.
 \end{abstract}
 
 \begin{IEEEkeywords}
-métodos formales, VDM++, transporte público, planificación de rutas, sistemas críticos
+métodos formales, VDM++, NuSMV, LTL, transporte público, planificación de rutas
 \end{IEEEkeywords}
 
 \input{sections/01-introduccion}
 \input{sections/02-related_work}
 \input{sections/03-material_methods}
 \input{sections/04-modelo}
+\input{sections/05-nusmv}
 \input{sections/05-pruebas}
 \input{sections/06-resultados}
 \input{sections/07-discusion}
 \input{sections/08-conclusiones}
 \input{sections/09-limitaciones}
 \input{sections/10-recomendaciones}
+\input{sections/11-anexo}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
