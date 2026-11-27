@@ -182,7 +182,6 @@ const RutaDetail = ({ rutaId, onBack }: RutaDetailProps) => {
   // Datos para el panel de información
   const totalParaderos = recorridoActual?.paraderos.length || 0;
   const colorLinea = recorridoActual?.color_linea || (tipoActivo === 'IDA' ? '#3b82f6' : '#ef4444');
-  const colorFondo = tipoActivo === 'IDA' ? 'bg-blue-600' : 'bg-red-600';
 
 
   // --- RENDERIZADO PRINCIPAL (MEJORADO) ---

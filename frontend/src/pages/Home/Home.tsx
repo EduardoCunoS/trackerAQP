@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Navigation, Search, Trash2, Locate, Eye, EyeOff, Route } from 'lucide-react';
+import { Navigation, Search, Trash2, Locate, Eye, EyeOff, Route } from 'lucide-react';
 import { 
   buscarRutasBackend, 
   buscarRutasCombinadasBackend,
@@ -223,7 +223,7 @@ export default function Home() {
               color: color,
               weight: 5,
               opacity: 0.7,
-              dashArray: index === 0 ? null : '5, 5'
+              dashArray: index === 0 ? undefined : '5, 5'
             }).addTo(mapRef.current!);
 
             poly.bindPopup(`

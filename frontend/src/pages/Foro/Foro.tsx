@@ -6,7 +6,7 @@ import BotonReportar from './components/BotonReportar'
 import foroService from '../../services/foroService'
 import { useCallback } from 'react'
 import { useAuth } from '../../components/auth/AuthProvider'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 const ForoView: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([])
@@ -61,7 +61,6 @@ const ForoView: React.FC = () => {
 
   const { user } = useAuth()
   const location = useLocation()
-  const navigate = useNavigate()
   // read optional openPostId passed via navigation state
   const externalOpenId = (location && (location.state as any)?.openPostId) ? (location.state as any).openPostId : null
 

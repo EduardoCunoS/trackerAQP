@@ -25,6 +25,7 @@ export interface RutaCombinada {
   distancia_total: number;
   tiempo_estimado_minutos: number;
   punto_transbordo: Coordenada;
+  distancia_transbordo?: number;
 }
 
 export interface RutaSegmento {
